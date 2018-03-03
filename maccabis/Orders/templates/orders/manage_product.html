@@ -1,0 +1,11 @@
+{% extends "orders/header.html" %}
+{% block content %}
+<h1>Manage product</h1>
+<h2>{{product_name}}</h2>
+<form method="POST" action=""> {% csrf_token %}
+    {{form.as_p}}
+
+
+<input type="submit" value="Go" name="go" onsubmit="go.disabled = true; return true;">
+</form>
+{% endblock %}

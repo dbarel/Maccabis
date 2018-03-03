@@ -1,0 +1,101 @@
+{% load static %}
+<link rel="stylesheet" type="text/css"  href="{% static 'maccabis\css\style.css' %}" />
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Maccabis Holidays Orders</title>
+	<meta charset="utf-8" />
+	{% load staticfiles %}
+	<link rel="stylesheet" href="{% static 'maccabis/css/bootstrap.min.css' %}" type = "text/css"/>
+	<meta name="viewport" content = "width=device-width, initial-scale=1.0">
+	
+	<style type="text/css">
+		html,
+		body {
+		  height:100%
+		}
+
+		table {
+			font-family: arial, sans-serif;
+			border-collapse: collapse;
+			width: 100%;
+		}
+
+		td, th {
+			border: 1px solid #dddddd;
+			text-align: left;
+			padding: 8px;
+			text-align: right;
+		}
+
+		tr:nth-child(even) {
+			background-color: #dddddd;
+		}
+	</style>
+</head>
+
+<body class="body" style="background-color:#f6f6f6">
+	<div class="container-fluid" style="min-height:95%; ">
+		<div class="row">
+			  <div class="col-sm-2">
+				  <br>
+				  <center>
+					
+				  </center>
+			  </div>
+			  <div class="col-sm-8">
+				  <br>
+				  <center>
+				  <img src="{% static 'maccabis/img/maccabisLogo.png' %}" class="responsive-img" style='max-height:100px;' alt="logo">
+				  
+				  </center>
+			  </div>
+			  <div class="col-sm-2">
+				  <br>
+				  <center>
+				  
+				  </center>
+			  </div>
+		</div><hr>
+
+		<div class="row">
+		  <div class="col-sm-2">
+		  <br>
+
+		  <br>
+		   <!-- Great, til you resize. -->
+			<!--<div class="well bs-sidebar affix" id="sidebar" style="background-color:#fff">-->
+			<div class="well bs-sidebar" id="sidebar" style="background-color:#fff">
+			  <ul class="nav nav-pills nav-stacked">
+				  <li><a href='/manage/'>Manage</a></li>
+				  <li><a href='/newOrder/'>New Order</a></li>
+				  <li><a href='/orders_list/'>Orders List</a></li>
+				  <li><a href='/list_to_confirm/'>Orders To Confirm</a></li>
+				  <li><a href='/list_confirmed/'>Orders Confirmed</a></li>
+				  <li><a href='/list_here_to_take/'>Orders Here To Take</a></li>
+				  <li><a href='/list_ready_to_check/'>Orders Ready To Check</a></li>
+				  <li><a href='/list_ready_to_pay/'>Orders Ready To Pay</a></li>
+				  <li><a href='/list_done/'>Orders Done</a></li>
+				<li><a href='/manageProducts/'>Products Summary</a></li>
+			  </ul>
+			</div> <!--well bs-sidebar affix-->
+		  </div> <!--col-sm-2-->
+		  <div class="col-sm-10">
+		  
+			<div class='container-fluid'>
+			<br><br>
+			   {% block content %}
+			   {% endblock %}	
+			</div>
+		  </div>
+		</div> 
+	</div>
+	<footer>
+		
+	</footer>	
+	
+</body>
+
+</html>

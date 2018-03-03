@@ -1,0 +1,44 @@
+{% extends "orders/header.html" %}
+{% block content %}
+<div class="box {{confirmed_class}}"><h4>Confirmed</h4></div>
+<div class="box {{here_to_take_class}}"><h4>Here to take</h4></div>
+<div class="box {{ready_to_check_class}}"><h4>Ready to check</h4></div>
+<div class="box {{ready_to_pay_class}}"><h4>Ready to pay</h4></div>
+<div class="box {{done_class}}"><h4>Done</h4></div>
+
+    <h1 style="text-align:right;">הזמנה מספר {{object.id}}</h1>
+    <h3 style="text-align:right;">{{object.customer_id}}, {{customer.email}}, {{customer.phone}} </h3>
+    <h3 style="text-align:right; color:rgb(250, 20, 20)">{{comment}} :הערות</h3>
+    <div>
+        <table style="width:100%">
+            <colgroup>
+                <col span="1" style="width: 33%;">
+                <col span="1" style="width: 10%;">
+                <col span="1" style="width: 10%;">
+                <col span="1" style="width: 40%;">
+                <col span="1" style="width: 7%;">
+            </colgroup>
+            <tr >   <th>הערות</th><th>כמות</th><th>מחיר</th><th>שם המוצר</th><th></th></tr>
+            {% for product in products_in_order %}
+                <tr>
+                    <td >{{ product.changes }}</td>
+                    <td >{{ product.number_of_packages }}</td>
+                    <td >{{ product.product_id.price }}</td>
+                    <td >{{ product.product_id }}</td>
+                    <td style="border-bottom: 1px solid #ddd; padding-right 5px; padding-bottom 5px; -moz-transform: scale(1); -webkit-transform: scale(1);">
+                        <input type="checkbox"></td>
+                </tr>
+            {%endfor%}
+        </table>
+        <h4>    סכום: {{total_price}}<span>ש"ח</span> </h4>
+    </div>
+    <div>
+        <div style="height: 30px; "></div>
+        <form method="POST" action=""> {% csrf_token %}
+            <input type="submit" value={{action}} name="GoToNextStep">
+            <input type="submit" value="move back to previous stage" name="GoToPrevStep">
+            <input type="submit" value="edit order" name="editOrder">
+        </form>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "orders/header.html" %}
+{% block content %}
+    <h1>Customers list</h1>
+    <form action="">
+    {% for customer in customers_list %}
+        <!--<input type="radio" name="customer" value={{ customer.email }}> {{ customer.name }} {{ customer.phone }} {{ customer.email }}<br>-->
+		<h5><a href="/{{link_page_name}}/{{customer.id}}"> {{ customer.name }} {{ customer.phone }} {{ customer.email }}</a></h5>
+	{% endfor %}
+    </form>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "orders/header.html" %}
+{% block content %}
+<h1>New order</h1>
+<h2>Customer details</h2>
+<form method="POST" action=""> {% csrf_token %}
+    <!--<button type="button"  name="_findCustomer">Find customer</button>-->
+    <a href="/customers_list/">Find customer </a>
+    {{form1.as_p}}
+    <input type="submit" value="Add customer" name="_addCustomer">
+    <input type="submit" value="Get order for existing customer" name="_useExistingCustomer">
+
+
+    <div>
+        <h2>{{s_order_num}}</h2>
+    </div>
+        {{ formset1.management_form }}
+        <div >
+            {% for f in formset1 %}
+            <p>
+                {{ f.id }}
+                {{ f.product_name }}
+                {{ f.price }}
+                {{ f.number_of_packs }}
+
+            </p>
+            {%endfor%}
+            {{form_note.as_p}}
+        </div>
+
+
+<input type="submit" value="Add Order" name="_addOrder">
+</form>
+{% endblock %}

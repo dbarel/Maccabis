@@ -1,0 +1,25 @@
+{% extends "orders/header.html" %}
+{% block content %}
+<h1>Edit order</h1>
+<form method="POST" action=""> {% csrf_token %}
+    <div>
+        <h2>{{s_order_num}}</h2>
+    </div>
+        {{ formset1.management_form }}
+        <div >
+            {% for f in formset1 %}
+            <p>
+                {{ f.id }}
+                {{ f.product_name }}
+                {{ f.price }}
+                {{ f.number_of_packs }}
+
+            </p>
+            {%endfor%}
+            {{form_note.as_p}}
+        </div>
+
+
+<input type="submit" value="Done" name="_done">
+</form>
+{% endblock %}
