@@ -52,7 +52,7 @@ class FormProduct(forms.ModelForm):
 
 
 class FormNote(forms.ModelForm):
-    comment = forms.CharField(required=False, widget=forms.Textarea)
+    notes = forms.CharField(required=False, widget=forms.Textarea)
 
     class Meta:
         model = OrdersList

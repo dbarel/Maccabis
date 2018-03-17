@@ -223,8 +223,8 @@ def new_order(request, pk=None):
                     add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
 
                 # comment:
-                if form_note.data['comment']:
-                    this_order.notes = form_note.data['comment']
+                if form_note.data['notes']:
+                    this_order.notes = form_note.data['notes']
                     this_order.save()
                     print("note added")
 
@@ -304,7 +304,7 @@ def edit_order(request):
         this_order = OrdersList.objects.get(id=this_order_id)
         existing_note = this_order.notes
         if existing_note:
-            init_data = {'comment': existing_note[0].comment}
+            init_data = {'comment': existing_note[0].notes}
             form_note = FormNote(request.POST or None, initial=init_data)
         else:
             form_note = FormNote(request.POST or None)
@@ -346,12 +346,12 @@ def edit_order(request):
             # comment:
             this_order = OrdersList.objects.get(id=order_num)
             existing_note = this_order.notes
-            if form_note.data['comment']:
+            if form_note.data['notes']:
                 if existing_note:
-                    this_order.notes = form_note.data['comment']
+                    this_order.notes = form_note.data['notes']
                     this_order.save()
                 else:
-                    this_order.notes = form_note.data['comment']
+                    this_order.notes = form_note.data['notes']
                     this_order.save()
                     print("note added")
             else:
