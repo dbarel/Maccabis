@@ -4,52 +4,56 @@ import datetime
 from django.db.models import Sum, F
 from xlrd import open_workbook
 from .utils import add_order_line_to_helper
+import glob
+import os
 
 
 def import_orders(path):
     # for all excel files in path:
-    full_path = path
-    wb = open_workbook(full_path)
-    for sheet in wb.sheets():
-        number_of_rows = sheet.nrows
-        this_order = {'order_num': None, 'name': None,
-                      'last_name': None, 'phone': None,
-                      'email': None, 'products': []}
-        next_row_is_new_order = False
-        for row in range(0, number_of_rows):
-            print(" row: ", row)
-            # check if this row starts a new order (header row):
-            order_num = str(sheet.cell(row, 0).value)
-            if order_num == "מספר הזמנה":
-                next_row_is_new_order = True
+    for filename in glob.glob(os.path.join(path, 'order_*')):
+        print(filename)
 
-                # previous order is done - send it to ...
-                if this_order['order_num']:
-                    print_order(this_order)
-                    send_order_to_db(this_order)
-                continue
+        wb = open_workbook(filename)
+        for sheet in wb.sheets():
+            number_of_rows = sheet.nrows
+            this_order = {'order_num': None, 'name': None,
+                          'last_name': None, 'phone': None,
+                          'email': None, 'products': []}
+            next_row_is_new_order = False
+            for row in range(0, number_of_rows):
+                print(" row: ", row)
+                # check if this row starts a new order (header row):
+                order_num = str(sheet.cell(row, 0).value)
+                if order_num == "מספר הזמנה":
+                    next_row_is_new_order = True
 
-            if next_row_is_new_order:
-                # this line starts a new order
-                next_row_is_new_order = False
-                this_order['order_num'] = int(sheet.cell(row, 0).value)
-                this_order['name'] = str(sheet.cell(row, 1).value)
-                this_order['last_name'] = str(sheet.cell(row, 2).value)
-                this_order['phone'] = str(int(sheet.cell(row, 3).value))
-                this_order['email'] = str(sheet.cell(row, 5).value)
-                this_order['notes'] = str(sheet.cell(row, 10).value)
-                this_product = {'id': int(sheet.cell(row, 11).value), 'product_name': str(sheet.cell(row, 12).value),
-                                'amount': int(sheet.cell(row, 15).value)}
-                this_order['products'].clear()
-                this_order['products'].append(this_product)
-            else:
-                this_product = {'id': int(sheet.cell(row, 11).value), 'product_name': str(sheet.cell(row, 12).value),
-                                'amount': int(sheet.cell(row, 15).value)}
-                this_order['products'].append(this_product)
+                    # previous order is done - send it to ...
+                    if this_order['order_num']:
+                        print_order(this_order)
+                        send_order_to_db(this_order)
+                    continue
 
-        # last order is done - send it to ...
-        print_order(this_order)
-        send_order_to_db(this_order)
+                if next_row_is_new_order:
+                    # this line starts a new order
+                    next_row_is_new_order = False
+                    this_order['order_num'] = int(sheet.cell(row, 0).value)
+                    this_order['name'] = str(sheet.cell(row, 1).value)
+                    this_order['last_name'] = str(sheet.cell(row, 2).value)
+                    this_order['phone'] = str(int(sheet.cell(row, 3).value))
+                    this_order['email'] = str(sheet.cell(row, 5).value)
+                    this_order['notes'] = str(sheet.cell(row, 10).value)
+                    this_product = {'id': int(sheet.cell(row, 11).value), 'product_name': str(sheet.cell(row, 12).value),
+                                    'amount': int(sheet.cell(row, 15).value)}
+                    this_order['products'].clear()
+                    this_order['products'].append(this_product)
+                else:
+                    this_product = {'id': int(sheet.cell(row, 11).value), 'product_name': str(sheet.cell(row, 12).value),
+                                    'amount': int(sheet.cell(row, 15).value)}
+                    this_order['products'].append(this_product)
+
+            # last order is done - send it to ...
+            print_order(this_order)
+            send_order_to_db(this_order)
 
 
 def send_order_to_db(extern_order):
@@ -181,4 +185,4 @@ def print_order(order):
 
 
 if __name__ == '__main__':
-    import_orders('C:\\Users\\dekel\\Desktop\\maccabis_django\\maccabis\\Orders\\ordersFiles\\2018_03_16_a.xlsx')
+    import_orders('C:\\Users\\dekel\\Desktop\\maccabis_django\\maccabis\\Orders\\ordersFiles')

@@ -124,17 +124,35 @@ class ListViewOrdersList(ListView):
         context = super(ListViewOrdersList, self).get_context_data(**kwargs)
         context["list_title"] = get_title(self.kwargs['status'])
         if self.kwargs['status'] == 'all':
-            context["orders_list"] = OrdersList.objects.all().order_by("foreign_order_id") \
+            context["orders_list"] = OrdersList.objects.filter(take_on_friday=False, delivery=False)\
+                .order_by("foreign_order_id") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
+            context["orders_list_2"] = OrdersList.objects.filter(take_on_friday=True, delivery=False)\
+                .order_by("foreign_order_id") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
+            context["orders_list_3"] = OrdersList.objects.filter(delivery=True)\
+                .order_by("foreign_order_id") \
                 .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
         else:
             # context["orders_list"] = OrdersList.objects.filter(status=self.kwargs['status']).order_by("id")\
             #      .values('id', 'customer_id__name')
             status_int = self.kwargs['status']
 
-            temp_list = OrdersList.objects.filter(status=status_int).values('id', 'foreign_order_id',
-                                                                            'customer_id__name', 'notes')
+            temp_list = OrdersList.objects.filter(status=status_int, take_on_friday=False, delivery=False)\
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
             sorted_list = sort_by_status_time(temp_list, status_int)
             context["orders_list"] = sorted_list
+
+            temp_list = OrdersList.objects.filter(status=status_int, take_on_friday=True, delivery=False)\
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
+            sorted_list = sort_by_status_time(temp_list, status_int)
+            context["orders_list_2"] = sorted_list
+
+            temp_list = OrdersList.objects.filter(status=status_int, delivery=True).values('id', 'foreign_order_id',
+                                                                            'customer_id__name', 'notes')
+            sorted_list = sort_by_status_time(temp_list, status_int)
+            context["orders_list_3"] = sorted_list
+
         context["link_page_name"] = 'orders'
         return context
 
