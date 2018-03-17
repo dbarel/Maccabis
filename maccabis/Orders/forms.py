@@ -53,9 +53,15 @@ class FormProduct(forms.ModelForm):
 
 class FormNote(forms.ModelForm):
     notes = forms.CharField(required=False, widget=forms.Textarea)
+    take_on_friday = forms.BooleanField(required=False)
+    delivery = forms.BooleanField(required=False)
+    for_second_holiday = forms.BooleanField(required=False)
 
     class Meta:
         model = OrdersList
         fields = [
             'notes',
+            'take_on_friday',
+            'delivery',
+            'for_second_holiday'
         ]

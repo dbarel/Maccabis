@@ -6,9 +6,18 @@
 <div class="box {{ready_to_pay_class}}"><h4>Ready to pay</h4></div>
 <div class="box {{done_class}}"><h4>Done</h4></div>
 
-    <h1 style="text-align:right;">הזמנה מספר {{object.id}}</h1>
-    <h3 style="text-align:right;">{{object.customer_id}}, {{customer.email}}, {{customer.phone}} </h3>
+    <h1 style="text-align:right;">הזמנה מספר {{object.foreign_order_id}}</h1>
+    <h3 style="text-align:right;">{{object.customer_id}}, {{customer.email}}, {{customer.phone}}, order {{object.id}} </h3>
     <h3 style="text-align:right; color:rgb(250, 20, 20)">{{comment}} :הערות</h3>
+    {% if b_take_on_friday %}
+        <div class="box done"><h4>לוקחים בשישי</h4></div>
+    {% endif %}
+    {% if b_delivery %}
+        <div class="box done"><h4>משלוח</h4></div>
+    {% endif %}
+    {% if b_second_holiday %}
+        <div class="box done"><h4>חג שני</h4></div>
+    {% endif %}
     <div>
         <table style="width:100%">
             <colgroup>

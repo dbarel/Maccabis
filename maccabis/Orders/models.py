@@ -71,6 +71,9 @@ class OrdersList(models.Model):
     done_time = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='0')
     notes = models.TextField()
+    take_on_friday = models.BooleanField(default=False)
+    delivery = models.BooleanField(default=False)
+    for_second_holiday = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.id)

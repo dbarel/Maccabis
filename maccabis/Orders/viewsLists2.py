@@ -52,6 +52,19 @@ class OrderDetailView(DetailView):
                         if status_int > 4:
                             context["done_class"] = "done"
 
+        if self.object.take_on_friday:
+            context["b_take_on_friday"] = True
+        else:
+            context["b_take_on_friday"] = False
+        if self.object.delivery:
+            context["delivery"] = True
+        else:
+            context["delivery"] = False
+        if self.object.for_second_holiday:
+            context["b_second_holiday"] = True
+        else:
+            context["b_second_holiday"] = False
+
         return context
 
     def post(self, request, *args, **kwargs):
@@ -111,14 +124,15 @@ class ListViewOrdersList(ListView):
         context = super(ListViewOrdersList, self).get_context_data(**kwargs)
         context["list_title"] = get_title(self.kwargs['status'])
         if self.kwargs['status'] == 'all':
-            context["orders_list"] = OrdersList.objects.all().order_by("id") \
-                .values('id', 'customer_id__name')
+            context["orders_list"] = OrdersList.objects.all().order_by("foreign_order_id") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
         else:
             # context["orders_list"] = OrdersList.objects.filter(status=self.kwargs['status']).order_by("id")\
             #      .values('id', 'customer_id__name')
             status_int = self.kwargs['status']
 
-            temp_list = OrdersList.objects.filter(status=status_int).values('id', 'customer_id__name')
+            temp_list = OrdersList.objects.filter(status=status_int).values('id', 'foreign_order_id',
+                                                                            'customer_id__name', 'notes')
             sorted_list = sort_by_status_time(temp_list, status_int)
             context["orders_list"] = sorted_list
         context["link_page_name"] = 'orders'

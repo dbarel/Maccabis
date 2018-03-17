@@ -12,6 +12,8 @@
 .notDone {background-color:#75a689; color:#fcfbe6;}
 .done {background-color:#931b1d; color:#fcfbe6;}
 
+.tag1 {background-color:#931b1d; color:#fcfbe6;}
+
 .col {background-color:rgb(100, 255, 191);}
 .myTable {
     width: 100%;

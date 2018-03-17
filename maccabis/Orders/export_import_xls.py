@@ -7,7 +7,9 @@ from .utils import add_order_line_to_helper
 
 
 def import_orders(path):
-    wb = open_workbook(path)
+    # for all excel files in path:
+    full_path = path
+    wb = open_workbook(full_path)
     for sheet in wb.sheets():
         number_of_rows = sheet.nrows
         this_order = {'order_num': None, 'name': None,
@@ -35,6 +37,7 @@ def import_orders(path):
                 this_order['last_name'] = str(sheet.cell(row, 2).value)
                 this_order['phone'] = str(int(sheet.cell(row, 3).value))
                 this_order['email'] = str(sheet.cell(row, 5).value)
+                this_order['notes'] = str(sheet.cell(row, 10).value)
                 this_product = {'id': int(sheet.cell(row, 11).value), 'product_name': str(sheet.cell(row, 12).value),
                                 'amount': int(sheet.cell(row, 15).value)}
                 this_order['products'].clear()
@@ -75,7 +78,8 @@ def send_order_to_db(extern_order):
         this_customer = existing_customer.first()
 
     # add order:
-    this_order = OrdersList(customer_id=this_customer, foreign_order_id=extern_order['order_num'])
+    this_order = OrdersList(customer_id=this_customer, foreign_order_id=extern_order['order_num'],
+                            notes=extern_order['notes'])
     this_order.save()
     print('--order number ', this_order.id, 'added. number in website: ', extern_order['order_num'])
 

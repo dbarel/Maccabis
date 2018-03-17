@@ -304,10 +304,14 @@ def edit_order(request):
         this_order = OrdersList.objects.get(id=this_order_id)
         existing_note = this_order.notes
         if existing_note:
-            init_data = {'comment': existing_note[0].notes}
+            print(existing_note)
+            init_data = {'notes': str(existing_note), 'take_on_friday': this_order.take_on_friday,
+                         'delivery': this_order.delivery, 'for_second_holiday': this_order.for_second_holiday}
             form_note = FormNote(request.POST or None, initial=init_data)
         else:
-            form_note = FormNote(request.POST or None)
+            init_data = {'take_on_friday': this_order.take_on_friday,
+                         'delivery': this_order.delivery, 'for_second_holiday': this_order.for_second_holiday}
+            form_note = FormNote(request.POST or None, initial=init_data)
 
         # render:
         context = {
@@ -344,20 +348,28 @@ def edit_order(request):
                 add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
 
             # comment:
-            this_order = OrdersList.objects.get(id=order_num)
-            existing_note = this_order.notes
-            if form_note.data['notes']:
-                if existing_note:
-                    this_order.notes = form_note.data['notes']
-                    this_order.save()
+            if form_note.is_valid():
+                this_order = OrdersList.objects.get(id=order_num)
+                existing_note = this_order.notes
+                if form_note.data['notes']:
+                    if existing_note:
+                        this_order.notes = form_note.data['notes']
+                        this_order.save()
+                    else:
+                        this_order.notes = form_note.data['notes']
+                        this_order.save()
+                        print("note added")
                 else:
-                    this_order.notes = form_note.data['notes']
-                    this_order.save()
-                    print("note added")
-            else:
-                if existing_note:
-                    this_order.notes = ''
-                    this_order.save()
+                    if existing_note:
+                        this_order.notes = ''
+                        this_order.save()
+
+                # update boolean fields:
+                # print(form_note.cleaned_data, type(form_note.cleaned_data))
+                this_order.take_on_friday = form_note.cleaned_data.get('take_on_friday')
+                this_order.delivery = form_note.cleaned_data.get('delivery')
+                this_order.for_second_holiday = form_note.cleaned_data.get('for_second_holiday')
+                this_order.save()
 
         return redirect('../orders/'+str(order_num))
 
