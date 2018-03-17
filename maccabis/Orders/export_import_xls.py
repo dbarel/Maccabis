@@ -1,69 +1,96 @@
-from .models import ProductOrderHelper, OrdersList, Note, Products, ProductCounter, Customer
+from .models import ProductOrderHelper, OrdersList, Products, ProductCounter, Customer
 import xlwt, xlrd
 import datetime
-# from django.db.models import Sum, F
+from django.db.models import Sum, F
 from xlrd import open_workbook
+from .utils import add_order_line_to_helper
 
 
 def import_orders(path):
-    wb = open_workbook('C:\\Users\\dekel\\Desktop\\maccabis_django\\maccabis\\Orders\\ordersFiles\\orderDetails1.xlsx')
+    wb = open_workbook(path)
     for sheet in wb.sheets():
         number_of_rows = sheet.nrows
-        # number_of_columns = sheet.ncols
-        mail = []
-        skip_order = 0
-        order_num = 0
-        this_item = 0
-        for row in range(1, number_of_rows):
+        this_order = {'order_num': None, 'name': None,
+                      'last_name': None, 'phone': None,
+                      'email': None, 'products': []}
+        next_row_is_new_order = False
+        for row in range(0, number_of_rows):
             print(" row: ", row)
-            # check if this row starts a new order (email is changed):
-            this_email = sheet.cell(row, 5).value
-            if this_email != mail:
-                mail = this_email
-                # new order - check if already exists, if not - set a customer and fill order
-                b_order_exists, order_num = check_if_customer_exists(this_email)
-                if b_order_exists:
-                    skip_order = 1
-                else:
-                    skip_order = 0
-                    # new customer + new order started in 'check_if_customer_exists'.
-                    # fill first item:
-                    fill_item(order_num, this_item)
-            else: # still same oder
-                if skip_order:
-                    continue
-                else:
-                    # fill another item:
-                    fill_item(order_num, this_item)
+            # check if this row starts a new order (header row):
+            order_num = str(sheet.cell(row, 0).value)
+            if order_num == "מספר הזמנה":
+                next_row_is_new_order = True
+
+                # previous order is done - send it to ...
+                if this_order['order_num']:
+                    print_order(this_order)
+                    send_order_to_db(this_order)
+                continue
+
+            if next_row_is_new_order:
+                # this line starts a new order
+                next_row_is_new_order = False
+                this_order['order_num'] = int(sheet.cell(row, 0).value)
+                this_order['name'] = str(sheet.cell(row, 1).value)
+                this_order['last_name'] = str(sheet.cell(row, 2).value)
+                this_order['phone'] = str(int(sheet.cell(row, 3).value))
+                this_order['email'] = str(sheet.cell(row, 5).value)
+                this_product = {'id': int(sheet.cell(row, 11).value), 'product_name': str(sheet.cell(row, 12).value),
+                                'amount': int(sheet.cell(row, 15).value)}
+                this_order['products'].clear()
+                this_order['products'].append(this_product)
+            else:
+                this_product = {'id': int(sheet.cell(row, 11).value), 'product_name': str(sheet.cell(row, 12).value),
+                                'amount': int(sheet.cell(row, 15).value)}
+                this_order['products'].append(this_product)
+
+        # last order is done - send it to ...
+        print_order(this_order)
+        send_order_to_db(this_order)
 
 
-def check_if_customer_exists(this_email):
-    existing_customer = Customer.objects.filter(email=this_email)
+def send_order_to_db(extern_order):
+    print('sending order ', extern_order['order_num'], 'to db')
+    # check if order exists:
+    existing_order = OrdersList.objects.filter(foreign_order_id=extern_order['order_num'])
+    # if order exists - do nothing
+    if existing_order:
+        print('order exists. returning')
+        return
+
+    # if not - check if customer exists:
+    # this_email = extern_order["email"]
+    # existing_customer = Customer.objects.filter(email=this_email)
+    this_name = extern_order['name']+' '+extern_order['last_name']
+    existing_customer = Customer.objects.filter(name=this_name)
     print("check for existing_customer: ", existing_customer)
-    if existing_customer:
-        # customer exists
-        order_num = 0
-        print("customer exists")
-    else:  # no existing customer
-        # add order to the list and give order number:
-        # this_email = form.cleaned_data.get("email")
-        this_customer = Customer.objects.get(email=this_email)
-        print(this_customer, type(this_customer))
+    # if customer dose not exists - add customer
+    if not existing_customer:
+        print('add customer: ', extern_order['name']+' '+extern_order['last_name'])
+        this_customer = Customer(name=extern_order['name']+' '+extern_order['last_name'], phone=extern_order['phone'],
+                                 email=extern_order['email'])
+        this_customer.save()
+    else:
+        print('customer exists!!!!!! adding order for same customer')
+        this_customer = existing_customer.first()
 
-        this_order = OrdersList(customer_id=this_customer)
-        this_order.save()
+    # add order:
+    this_order = OrdersList(customer_id=this_customer, foreign_order_id=extern_order['order_num'])
+    this_order.save()
+    print('--order number ', this_order.id, 'added. number in website: ', extern_order['order_num'])
 
-        # add order to all orders:
-        order_num = this_order.id
-        # store order number in the session:
-        s_order_num = 'Customer added. Order number is:'
-        s_order_num += str(order_num)
-        print(s_order_num)
+    # fill order:
+    for p in extern_order['products']:
+        # product_name = p['product_name']
+        product_foreign_id = p['id']
+        quantity = p['amount']
 
-    return existing_customer, order_num
+        # was: if quantity > 0: # now we are checking for each product.
+        # this is because if a product was changed from 1 to 0 we still need to make the change!!
+        this_product = Products.objects.get(foreign_product_id=product_foreign_id)
+        edit_inventory = False
+        add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
 
-def fill_item(order_num, item):
-    item=1
 
 def export_orders(path):
 
@@ -84,11 +111,7 @@ def export_orders(path):
         sh.write(1, 2,  order.customer_id.email)
         sh.write(1, 3,  order.customer_id.phone)
 
-        existing_note = Note.objects.filter(order_id=order)
-        if existing_note:
-            comment = existing_note[0].comment
-        else:
-            comment = ''
+        comment = order.notes
         sh.write(2, 0, "הערות")
         sh.write(2, 1,  comment)
 
@@ -143,3 +166,15 @@ def export_inventory(path):
     book.save(file_name)
 
 
+def print_order(order):
+    print(order['order_num'])
+    print(order['name'])
+    print(order['last_name'])
+    print(order['phone'])
+    print(order['email'])
+    for p in order['products']:
+        print(p['id'], p['product_name'], p['amount'])
+
+
+if __name__ == '__main__':
+    import_orders('C:\\Users\\dekel\\Desktop\\maccabis_django\\maccabis\\Orders\\ordersFiles\\2018_03_16_a.xlsx')

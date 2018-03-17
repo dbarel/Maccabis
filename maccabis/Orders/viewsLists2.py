@@ -1,7 +1,7 @@
 from django.shortcuts import redirect
 from django.db.models import Sum, Q
 from django.views.generic import DetailView, ListView
-from .models import OrdersList, Customer, ProductOrderHelper, Products, ProductCounter, ProductsSummer, Note
+from .models import OrdersList, Customer, ProductOrderHelper, Products, ProductCounter, ProductsSummer
 import datetime
 # import pdb
 
@@ -20,7 +20,7 @@ class OrderDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super(OrderDetailView, self).get_context_data(**kwargs)
         context["customer"] = Customer.objects.get(id=self.object.customer_id.id)
-        context["products_in_order"] = ProductOrderHelper.objects.filter(order_id=self.object.id)
+        context["products_in_order"] = ProductOrderHelper.objects.filter(order_id=self.object.id).order_by('product_id__id')
         temp_objects = ProductOrderHelper.objects.filter(order_id=self.object.id)
         # .aggregate(total=Sum('progress', field="progress*estimated_days"))['total'])
         total = 0
@@ -33,12 +33,7 @@ class OrderDetailView(DetailView):
         print("order status: ", status_int)
 
         context["action"] = ACTIONS_CHOICES[status_int]
-
-        existing_note = Note.objects.filter(order_id=self.object.id)
-        if existing_note:
-            context["comment"] = existing_note[0].comment
-        else:
-            context["comment"] = ''
+        context["comment"] = self.object.notes
 
         # set classes:
         context["confirmed_class"] = "notDone"

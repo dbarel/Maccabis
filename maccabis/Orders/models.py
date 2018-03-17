@@ -1,8 +1,18 @@
 from django.db import models
 
 
+class Customer(models.Model):
+    name = models.CharField(max_length=50)
+    phone = models.CharField(max_length=15)  # convert to regexp (from form?)
+    email = models.EmailField(max_length=254, )
+
+    def __str__(self):
+        return self.name
+
+
 class Products(models.Model):
     product_name = models.CharField(max_length=50)
+    foreign_product_id = models.IntegerField(default=0)
     price = models.IntegerField()
 
     def __str__(self):
@@ -33,15 +43,6 @@ class ProductsSummer(models.Model):
     sum_available = models.IntegerField()
 
 
-class Customer(models.Model):
-    name = models.CharField(max_length=50)
-    phone = models.CharField(max_length=15)  # convert to regexp (from form?)
-    email = models.EmailField(max_length=254, )
-
-    def __str__(self):
-        return self.name
-
-
 class ProductOrderHelper(models.Model):
     order_id = models.ForeignKey('OrdersList', on_delete=models.CASCADE, )
     product_id = models.ForeignKey('Products', on_delete=models.PROTECT)
@@ -62,6 +63,7 @@ STATUS_CHOICES = (
 
 class OrdersList(models.Model):
     customer_id = models.ForeignKey('Customer', on_delete=models.CASCADE)
+    foreign_order_id = models.IntegerField(default=0)
     confirmed_time = models.DateTimeField(null=True, blank=True)
     here_to_take_time = models.DateTimeField(null=True, blank=True)
     ready_to_check_time = models.DateTimeField(null=True, blank=True)
@@ -69,60 +71,6 @@ class OrdersList(models.Model):
     done_time = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='0')
     notes = models.TextField()
-
-    def __str__(self):
-        return str(self.id)
-
-
-class Note(models.Model):
-    order_id = models.ForeignKey('OrdersList', on_delete=models.CASCADE)
-    comment = models.TextField()
-
-
-class ListAllOrders(models.Model):
-    order_id = models.ForeignKey('OrdersList', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return str(self.id)
-
-
-class ListOrdersToConfirm(models.Model):
-    order_id = models.ForeignKey('OrdersList', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return str(self.id)
-
-
-class ListOrdersConfirmed(models.Model):
-    order_id = models.ForeignKey('OrdersList', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return str(self.id)
-
-
-class ListOrdersHereToTake(models.Model):
-    order_id = models.ForeignKey('OrdersList', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return str(self.id)
-
-
-class ListOrdersReadyToCheck(models.Model):
-    order_id = models.ForeignKey('OrdersList', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return str(self.id)
-
-
-class ListOrdersReadyToPay(models.Model):
-    order_id = models.ForeignKey('OrdersList', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return str(self.id)
-
-
-class ListOrdersDone(models.Model):
-    order_id = models.ForeignKey('OrdersList', on_delete=models.CASCADE)
 
     def __str__(self):
         return str(self.id)

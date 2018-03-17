@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect
 from django.forms import modelformset_factory
 from .forms import FormCustomer, FormProductCounter, FormNote
-from .models import Products, TempOrder, OrdersList, Customer, ListAllOrders, ProductCounter, ProductOrderHelper, Note
+from .models import Products, TempOrder, OrdersList, Customer, ProductCounter, ProductOrderHelper
 from .utils import add_order_line_to_helper
 from .export_import_xls import export_orders, export_inventory, import_orders
 import datetime
-import pdb
+# import pdb
 
 
 def index(request):
@@ -13,9 +13,8 @@ def index(request):
 
 
 def manage(request):
-    pdb.set_trace()
     print('importing...')
-    import_orders('')
+    import_orders('C:\\Users\\dekel\\Desktop\\maccabis_django\\maccabis\\Orders\\ordersFiles\\2018_03_16_a.xlsx')
 
     print('exporting all...')
     path = 'C:\\Users\\dekel\\Orders\\'
@@ -93,7 +92,7 @@ def new_order(request, pk=None):
         form = FormCustomer(request.POST or None)
     s_order_num = 'to get an order number, you need to add/choose a customer'
 
-    form_note = FormNote(request.POST or None);
+    form_note = FormNote(request.POST or None)
 
     if request.POST:
 
@@ -130,10 +129,6 @@ def new_order(request, pk=None):
 
                     this_order = OrdersList(customer_id=this_customer)
                     this_order.save()
-
-                    # add order to all orders:
-                    list_item = ListAllOrders(order_id=this_order)
-                    list_item.save()
 
                     # add order to all orders:
                     # list_item_to_confirm = ListOrdersToConfirm(order_id=this_order)
@@ -180,10 +175,6 @@ def new_order(request, pk=None):
                     this_customer = existing_customer.first()
                     this_order = OrdersList(customer_id=this_customer)
                     this_order.save()
-
-                    # add order to all orders:
-                    list_item = ListAllOrders(order_id=this_order)
-                    list_item.save()
 
                     order_num = this_order.id
                     # store order number in the session:
@@ -233,8 +224,8 @@ def new_order(request, pk=None):
 
                 # comment:
                 if form_note.data['comment']:
-                    note = Note(order_id=this_order, comment=form_note.data['comment'])
-                    note.save()
+                    this_order.notes = form_note.data['comment']
+                    this_order.save()
                     print("note added")
 
                 request.session['order_num'] = order_num
@@ -310,7 +301,8 @@ def edit_order(request):
         formset_product = modelformset_factory(TempOrder, fields=('product_name', 'price', 'number_of_packs'), extra=0)
         formset = formset_product(request.POST or None, queryset=TempOrder.objects.all(), )
 
-        existing_note = Note.objects.filter(order_id=this_order_id)
+        this_order = OrdersList.objects.get(id=this_order_id)
+        existing_note = this_order.notes
         if existing_note:
             init_data = {'comment': existing_note[0].comment}
             form_note = FormNote(request.POST or None, initial=init_data)
@@ -352,19 +344,20 @@ def edit_order(request):
                 add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
 
             # comment:
-            existing_note = Note.objects.filter(order_id=this_order)
+            this_order = OrdersList.objects.get(id=order_num)
+            existing_note = this_order.notes
             if form_note.data['comment']:
                 if existing_note:
-                    existing_note[0].comment = form_note.data['comment'];
-                    existing_note[0].save()
+                    this_order.notes = form_note.data['comment']
+                    this_order.save()
                 else:
-                    note = Note(order_id=this_order, comment=form_note.data['comment'])
-                    note.save()
+                    this_order.notes = form_note.data['comment']
+                    this_order.save()
                     print("note added")
             else:
                 if existing_note:
-                    existing_note[0].comment = ''
-                    existing_note[0].save()
+                    this_order.notes = ''
+                    this_order.save()
 
         return redirect('../orders/'+str(order_num))
 

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Customer, Products, ProductOrderHelper, ProductCounter, Note
+from .models import Customer, Products, ProductOrderHelper, ProductCounter, OrdersList
 
 
 class FormProductCounter(forms.ModelForm):
@@ -55,7 +55,7 @@ class FormNote(forms.ModelForm):
     comment = forms.CharField(required=False, widget=forms.Textarea)
 
     class Meta:
-        model = Note
+        model = OrdersList
         fields = [
-            'comment',
+            'notes',
         ]
