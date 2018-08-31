@@ -100,6 +100,41 @@ def send_order_to_db(extern_order):
         add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
 
 
+def export_meta_data(path):
+
+    # path = 'C:\\Users\\dekel\\Orders\\'
+    file_name = path + 'meta_data.xls'
+
+    book = xlwt.Workbook()
+    sheet_name = 'all_orders'
+    sh = book.add_sheet(sheet_name)
+    # write your header first
+    sh.write(0, 0, "הזמנה מספר")
+    sh.write(0, 1, "שם הלקוח")
+    sh.write(0, 2, "סכום הזמנה")
+    sh.write(0, 3, "זמן הגעה")
+    sh.write(0, 4, "הזמנה הגיעה לבדיקה")
+    sh.write(0, 5, "הזמנה נבדקה")
+    sh.write(0, 6, "הזמנה שולמה")
+
+    n=1
+    for order in OrdersList.objects.all():
+        sh.write(n, 0,  order.id)
+        sh.write(n, 1,  order.customer_id.name)
+        sh.write(n, 2,  order.id)
+
+        # comment = order.notes
+        # sh.write(2, 0, "הערות")
+        # sh.write(2, 1,  comment)
+        sh.write(n, 3,  str(order.here_to_take_time))
+        sh.write(n, 4,  str(order.ready_to_check_time))
+        sh.write(n, 5,  str(order.ready_to_pay_time))
+        sh.write(n, 6,  str(order.done_time))
+        n = n+1
+
+    book.save(file_name)
+
+
 def export_orders(path):
 
     # path = 'C:\\Users\\dekel\\Orders\\'

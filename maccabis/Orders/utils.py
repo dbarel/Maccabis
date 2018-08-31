@@ -15,7 +15,9 @@ def add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
               order_line.product_id, order_line.number_of_packages, "datetime: ", order_line.time)
         # according to status, we might need to remove these items from inventory:
         if edit_inventory:
+            print('in edit ...')
             quantity_diff = quantity
+            print(quantity_diff)
             # remove quantity_diff from storage:
             owner_str = "add_order_id_" + str(this_order)
             new_line = ProductCounter(product_id=this_product, number_of_packages=quantity_diff,
@@ -41,8 +43,8 @@ def add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
               "packages: ", all_lines_from_this_order[0].number_of_packages,
               "datetime: ", all_lines_from_this_order[0].time,
               "changes: ", all_lines_from_this_order[0].changes)
+        quantity_diff = quantity - old_quantity
         if edit_inventory:
-            quantity_diff = quantity - old_quantity
             if quantity_diff > 0:
                 # remove quantity_diff from storage
                 owner_str = "add_order_id_" + str(this_order)
@@ -52,11 +54,11 @@ def add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
                 owner_str = "return_order_id_" + str(this_order)
                 quantity_diff = abs(quantity_diff)
                 action_str = 'ro'
-        new_line = ProductCounter(product_id=all_lines_from_this_order[0].product_id,number_of_packages=quantity_diff,
+            new_line = ProductCounter(product_id=all_lines_from_this_order[0].product_id,number_of_packages=quantity_diff,
                                   time=datetime.datetime.now(), action=action_str, owner=owner_str)
-        print("editing inventory product ", all_lines_from_this_order[0].product_id, ", ", quantity_diff, " packs, ",
-              owner_str)
-        new_line.save()
+            print("editing inventory product ", all_lines_from_this_order[0].product_id, ", ", quantity_diff,
+                  " packs, ",owner_str)
+            new_line.save()
 
     elif all_lines_from_this_order.count() > 1:
         # error - this line has more than one occurrence:

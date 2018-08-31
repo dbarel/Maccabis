@@ -133,6 +133,9 @@ class ListViewOrdersList(ListView):
             context["orders_list_3"] = OrdersList.objects.filter(delivery=True)\
                 .order_by("foreign_order_id") \
                 .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
+            context["orders_list_4"] = OrdersList.objects.filter(for_second_holiday=True)\
+                .order_by("foreign_order_id") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
         else:
             # context["orders_list"] = OrdersList.objects.filter(status=self.kwargs['status']).order_by("id")\
             #      .values('id', 'customer_id__name')
@@ -152,6 +155,11 @@ class ListViewOrdersList(ListView):
                                                                             'customer_id__name', 'notes')
             sorted_list = sort_by_status_time(temp_list, status_int)
             context["orders_list_3"] = sorted_list
+
+            temp_list = OrdersList.objects.filter(status=status_int, for_second_holiday=True).values('id', 'foreign_order_id',
+                                                                            'customer_id__name', 'notes')
+            sorted_list = sort_by_status_time(temp_list, status_int)
+            context["orders_list_4"] = sorted_list
 
         context["link_page_name"] = 'orders'
         return context
@@ -195,6 +203,9 @@ class ListViewProducts(ListView):
             val_prepared = int(0 if val_prepared is None else val_prepared)
             # sum_prepared.append(val_prepared)
 
+            # need to be prepared:
+            val_need_to_prepare = val_ordered - val_prepared
+
             # taken (for orders, and other):
             # here I can count the lines in all_orders_lines, with orders that are in status 3-5...
             temp = all_products_count_lines.filter(product_id=product, action='to').aggregate(Sum('number_of_packages'))
@@ -218,11 +229,16 @@ class ListViewProducts(ListView):
             val_available = val_prepared - val_taken
             # sum_available.append(val_available)
 
+            # extras:
+            val_extras = val_available - val_needed
+
             # put in model:
             this_product_sum = ProductsSummer(product_id=product, product_name=str(product),
                                               sum_ordered=val_ordered, sum_prepared=val_prepared,
                                               sum_taken=val_taken, sum_still_needed_for_orders=val_needed,
-                                              sum_available=val_available)
+                                              sum_available=val_available,
+                                              sum_still_need_to_prepare=val_need_to_prepare,
+                                              sum_extras=val_extras)
             this_product_sum.save()
 
         context["Products_list"] = ProductsSummer.objects.all()

@@ -3,7 +3,7 @@ from django.forms import modelformset_factory
 from .forms import FormCustomer, FormProductCounter, FormNote
 from .models import Products, TempOrder, OrdersList, Customer, ProductCounter, ProductOrderHelper
 from .utils import add_order_line_to_helper
-from .export_import_xls import export_orders, export_inventory, import_orders
+from .export_import_xls import export_orders, export_inventory, import_orders, export_meta_data
 import datetime
 # import pdb
 
@@ -20,6 +20,8 @@ def manage(request):
     path = 'C:\\Users\\dekel\\Orders\\'
     export_orders(path)
     export_inventory(path)
+    export_meta_data(path)
+
     context = {
         "str_orders": "orders exported to: " + path,
         "str_inventory": "inventory exported to: " + path,

@@ -41,6 +41,8 @@ class ProductsSummer(models.Model):
     sum_taken = models.IntegerField()
     sum_still_needed_for_orders = models.IntegerField()
     sum_available = models.IntegerField()
+    sum_still_need_to_prepare = models.IntegerField(default=0)
+    sum_extras = models.IntegerField(default=0)
 
 
 class ProductOrderHelper(models.Model):

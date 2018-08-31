@@ -4,21 +4,25 @@
 
     <table style="width:80%; ">
         <tr style="border-bottom: 1px solid #ddd;">
-            <td>product</td>
-            <td>ordered</td>
-            <td>prepared</td>
-            <td>taken</td>
-            <td>needed for orders</td>
-            <td>available</td>
+            <td>מוצר</td>
+            <td>הוזמנו</td>
+            <td>הוכנו</td>
+            <td>צריך להכין</td>
+            <td>נלקחו</td>
+            <td>עדיין צריך</td>
+            <td>במקרר</td>
+            <td>מיותרים</td>
         </tr>
         {% for product in Products_list %}
 		   <tr style="border-bottom: 1px solid #ddd;">
                 <td style="border-bottom: 1px solid #ddd;"><h5><a href="/manageProduct/{{product.product_id.id}}"> {{ product.product_name }}</a></h5></td>
                 <td style="border-bottom: 1px solid #ddd;">{{ product.sum_ordered }}</td>
                 <td style="border-bottom: 1px solid #ddd;">{{ product.sum_prepared }}</td>
+                <td style="border-bottom: 1px solid #ddd;">{{ product.sum_still_need_to_prepare }}</td>
                 <td style="border-bottom: 1px solid #ddd;">{{ product.sum_taken }}</td>
                 <td style="border-bottom: 1px solid #ddd;">{{ product.sum_still_needed_for_orders }}</td>
                 <td style="border-bottom: 1px solid #ddd;">{{ product.sum_available }}</td>
+               <td style="border-bottom: 1px solid #ddd;">{{ product.sum_extras }}</td>
             </tr>
 	    {% endfor %}
     </table>
