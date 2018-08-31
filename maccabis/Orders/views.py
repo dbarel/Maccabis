@@ -8,30 +8,46 @@ import datetime
 # import pdb
 
 
+# TODO: ?????? ????? ????
 def index(request):
     return render(request, 'orders/home.html')
 
 
 def manage(request):
-    print('importing...')
-    import_orders('C:\\Users\\dekel\\Desktop\\maccabis_django\\maccabis\\Orders\\ordersFiles\\2018_03_16_a.xlsx')
+    # for now - instead of import/export - do calculation of orders:
+    #print('importing...')
+    #import_orders(r'C:\Users\user\Desktop\Orders\FromWebsite\firstHoliday')
 
     print('exporting all...')
-    path = 'C:\\Users\\dekel\\Orders\\'
+    path = 'C:\\Users\\dekel\\Desktop\\Maccabis-master\\'
     export_orders(path)
-    export_inventory(path)
-    export_meta_data(path)
+    #export_inventory(path)
+    #context = {
+    #    "str_orders": "orders exported to: " + path,
+    #    "str_inventory": "inventory exported to: " + path,
+    #}
+
+    all_orders_count = OrdersList.objects.count()
+    orders_not_here_yet = OrdersList.objects.filter(status=0).count() + OrdersList.objects.filter(status=1).count()
+    orders_done = OrdersList.objects.filter(status=5).count()
 
     context = {
-        "str_orders": "orders exported to: " + path,
-        "str_inventory": "inventory exported to: " + path,
+        "str_orders": "???? ?????? ???? " + str(all_orders_count),
+        "str_inventory": "???? ?????? ???? ?? ????? ???? " + str(orders_not_here_yet),
+        "str_inventory2": "???? ?????? ???????? " + str(orders_done),
     }
+    # all_orders = OrdersList.objects.all()
+    # for order in all_orders:
+    #     order.status = 1
+    #     order.save()
+    #path = 'C:\\Users\\dekel\\Desktop\\Maccabis-master\\'
+    #export_meta_data(path)
 
     return render(request, 'orders/exported.html', context)
 
 
 def orders_export_all(request):
-    path = 'C:\\Users\\dekel\\Orders\\'
+    path = r'C:\Users\user\Desktop\Orders\Pesah2018Orders'
     export_orders(path)
     export_inventory(path)
     context = {
@@ -41,7 +57,7 @@ def orders_export_all(request):
 
 
 def inventory_export(request):
-    path = 'C:\\Users\\dekel\\Orders\\'
+    path = r'C:\Users\user\Desktop\Orders\Pesah2018Orders'
     export_inventory(path)
     context = {
         "str_inventory": "inventory exported to: "+path,

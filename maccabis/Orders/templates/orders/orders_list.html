@@ -3,7 +3,7 @@
     <h1>{{list_title}}</h1>
     <h2> לוקחים ביום חמישי</h2>
     {% for order in orders_list %}
-		<h5 style="margin-right: 800px;"><a href="/{{link_page_name}}/{{order.id}}"> {{ order.foreign_order_id }}
+		<h5 style="margin-right: 5%;"><a href="/{{link_page_name}}/{{order.id}}"> {{ order.foreign_order_id }}
             <span style="color: red; float: right">{{ order.notes }}</span>
             <b>{{ order.customer_id__name }}</b>
             <small>{{order.id}}</small>
@@ -21,7 +21,7 @@
 
     <h2> משלוחים</h2>
     {% for order in orders_list_3 %}
-		<h5 style="margin-right: 800px;"><a href="/{{link_page_name}}/{{order.id}}"> {{ order.foreign_order_id }}
+		<h5 style="margin-right: 5%;"><a href="/{{link_page_name}}/{{order.id}}"> {{ order.foreign_order_id }}
             <span style="color: red; float: right">{{ order.notes }}</span>
             <b>{{ order.customer_id__name }}</b>
             <small>{{order.id}}</small>
@@ -29,7 +29,7 @@
 	{% endfor %}
     <h2> חג שני</h2>
     {% for order in orders_list_4 %}
-		<h5 style="margin-right: 800px;"><a href="/{{link_page_name}}/{{order.id}}"> {{ order.foreign_order_id }}
+		<h5 style="margin-right: 5%;"><a href="/{{link_page_name}}/{{order.id}}"> {{ order.foreign_order_id }}
             <span style="color: red; float: right">{{ order.notes }}</span>
             <b>{{ order.customer_id__name }}</b>
             <small>{{order.id}}</small>

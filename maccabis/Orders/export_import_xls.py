@@ -8,6 +8,41 @@ import glob
 import os
 
 
+def export_meta_data(path):
+
+    # path = 'C:\\Users\\dekel\\Orders\\'
+    file_name = path + 'meta_data.xls'
+
+    book = xlwt.Workbook()
+    sheet_name = 'all_orders'
+    sh = book.add_sheet(sheet_name)
+    # write your header first
+    sh.write(0, 0, "הזמנה מספר")
+    sh.write(0, 1, "שם הלקוח")
+    sh.write(0, 2, "סכום הזמנה")
+    sh.write(0, 3, "זמן הגעה")
+    sh.write(0, 4, "הזמנה הגיעה לבדיקה")
+    sh.write(0, 5, "הזמנה נבדקה")
+    sh.write(0, 6, "הזמנה שולמה")
+
+    n=1
+    for order in OrdersList.objects.all():
+        sh.write(n, 0,  order.id)
+        sh.write(n, 1,  order.customer_id.name)
+        sh.write(n, 2,  order.id)
+
+        # comment = order.notes
+        # sh.write(2, 0, "הערות")
+        # sh.write(2, 1,  comment)
+        sh.write(n, 3,  str(order.here_to_take_time))
+        sh.write(n, 4,  str(order.ready_to_check_time))
+        sh.write(n, 5,  str(order.ready_to_pay_time))
+        sh.write(n, 6,  str(order.done_time))
+        n = n+1
+
+    book.save(file_name)
+
+
 def import_orders(path):
     # for all excel files in path:
     for filename in glob.glob(os.path.join(path, 'order_*')):
@@ -25,6 +60,7 @@ def import_orders(path):
                 # check if this row starts a new order (header row):
                 order_num = str(sheet.cell(row, 0).value)
                 if order_num == "מספר הזמנה":
+                    print("nex row is new order")
                     next_row_is_new_order = True
 
                     # previous order is done - send it to ...
@@ -34,12 +70,18 @@ def import_orders(path):
                     continue
 
                 if next_row_is_new_order:
+                    print("next_row_is_new_order")
                     # this line starts a new order
                     next_row_is_new_order = False
                     this_order['order_num'] = int(sheet.cell(row, 0).value)
                     this_order['name'] = str(sheet.cell(row, 1).value)
                     this_order['last_name'] = str(sheet.cell(row, 2).value)
-                    this_order['phone'] = str(int(sheet.cell(row, 3).value))
+                    if sheet.cell(row, 4).value:
+                        this_order['phone'] = str(sheet.cell(row, 4).value)
+                    elif sheet.cell(row, 3).value:
+                        this_order['phone'] = str(sheet.cell(row, 3).value)
+                    else:
+                        this_order['phone'] = ''
                     this_order['email'] = str(sheet.cell(row, 5).value)
                     this_order['notes'] = str(sheet.cell(row, 10).value)
                     this_product = {'id': int(sheet.cell(row, 11).value), 'product_name': str(sheet.cell(row, 12).value),
@@ -98,41 +140,6 @@ def send_order_to_db(extern_order):
         this_product = Products.objects.get(foreign_product_id=product_foreign_id)
         edit_inventory = False
         add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
-
-
-def export_meta_data(path):
-
-    # path = 'C:\\Users\\dekel\\Orders\\'
-    file_name = path + 'meta_data.xls'
-
-    book = xlwt.Workbook()
-    sheet_name = 'all_orders'
-    sh = book.add_sheet(sheet_name)
-    # write your header first
-    sh.write(0, 0, "הזמנה מספר")
-    sh.write(0, 1, "שם הלקוח")
-    sh.write(0, 2, "סכום הזמנה")
-    sh.write(0, 3, "זמן הגעה")
-    sh.write(0, 4, "הזמנה הגיעה לבדיקה")
-    sh.write(0, 5, "הזמנה נבדקה")
-    sh.write(0, 6, "הזמנה שולמה")
-
-    n=1
-    for order in OrdersList.objects.all():
-        sh.write(n, 0,  order.id)
-        sh.write(n, 1,  order.customer_id.name)
-        sh.write(n, 2,  order.id)
-
-        # comment = order.notes
-        # sh.write(2, 0, "הערות")
-        # sh.write(2, 1,  comment)
-        sh.write(n, 3,  str(order.here_to_take_time))
-        sh.write(n, 4,  str(order.ready_to_check_time))
-        sh.write(n, 5,  str(order.ready_to_pay_time))
-        sh.write(n, 6,  str(order.done_time))
-        n = n+1
-
-    book.save(file_name)
 
 
 def export_orders(path):
