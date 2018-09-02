@@ -137,7 +137,10 @@ def send_order_to_db(extern_order):
 
         # was: if quantity > 0: # now we are checking for each product.
         # this is because if a product was changed from 1 to 0 we still need to make the change!!
-        this_product = Products.objects.get(foreign_product_id=product_foreign_id)
+        try:
+            this_product = Products.objects.get(foreign_product_id=product_foreign_id)
+        except Products.DoesNotExist:
+            this_product = Products.objects.get(foreign_product_id_2=product_foreign_id)
         edit_inventory = False
         add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
 

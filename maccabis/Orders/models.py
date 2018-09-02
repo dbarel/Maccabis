@@ -13,6 +13,7 @@ class Customer(models.Model):
 class Products(models.Model):
     product_name = models.CharField(max_length=50)
     foreign_product_id = models.IntegerField(default=0)
+    foreign_product_id_2 = models.IntegerField(default=0)
     price = models.IntegerField()
 
     def __str__(self):
