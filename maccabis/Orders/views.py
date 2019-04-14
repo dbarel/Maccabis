@@ -8,18 +8,21 @@ import datetime
 # import pdb
 
 
-# TODO: ?????? ????? ????
+# Notes for updating the tool for a new holiday:
+# 1) clean the database by: flush
 def index(request):
     return render(request, 'orders/home.html')
 
 
 def manage(request):
     # for now - instead of import/export - do calculation of orders:
-    #print('importing...')
-    #import_orders(r'C:\Users\user\Desktop\Orders\FromWebsite\firstHoliday')
+    # print('importing...')
+    # import_orders(r'C:\Users\dekel\Desktop\maccabis_django\fromWebsite_roshHashana2018')
+
+    import_orders(r'C:\Users\dekel\Desktop\maccabis_django\fromWebsite_Pesah2019')
 
     print('exporting all...')
-    path = 'C:\\Users\\dekel\\Desktop\\Maccabis-master\\'
+    path = 'C:\\Users\\dekel\\Desktop\\maccabis_django\\'
     export_orders(path)
     #export_inventory(path)
     #context = {
@@ -27,15 +30,19 @@ def manage(request):
     #    "str_inventory": "inventory exported to: " + path,
     #}
 
+    # count and print summary of orders:
     all_orders_count = OrdersList.objects.count()
     orders_not_here_yet = OrdersList.objects.filter(status=0).count() + OrdersList.objects.filter(status=1).count()
     orders_done = OrdersList.objects.filter(status=5).count()
 
     context = {
-        "str_orders": "???? ?????? ???? " + str(all_orders_count),
-        "str_inventory": "???? ?????? ???? ?? ????? ???? " + str(orders_not_here_yet),
-        "str_inventory2": "???? ?????? ???????? " + str(orders_done),
+        "str_orders": "all orders " + str(all_orders_count),
+        "str_inventory": "order not here yet  " + str(orders_not_here_yet),
+        "str_inventory2": "orders done " + str(orders_done),
     }
+
+    # Meta data: used for saving data about the orders (timing etc..)
+    # for Maccais internal use. not needed in real time.
     # all_orders = OrdersList.objects.all()
     # for order in all_orders:
     #     order.status = 1

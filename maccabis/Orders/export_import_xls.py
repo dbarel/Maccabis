@@ -45,7 +45,7 @@ def export_meta_data(path):
 
 def import_orders(path):
     # for all excel files in path:
-    for filename in glob.glob(os.path.join(path, 'order_*')):
+    for filename in glob.glob(os.path.join(path, 'orderDetails_*')):
         print(filename)
 
         wb = open_workbook(filename)
@@ -131,15 +131,21 @@ def send_order_to_db(extern_order):
 
     # fill order:
     for p in extern_order['products']:
-        # product_name = p['product_name']
+        product_name = p['product_name']
         product_foreign_id = p['id']
         quantity = p['amount']
 
+        print(product_foreign_id, product_name)
         # was: if quantity > 0: # now we are checking for each product.
         # this is because if a product was changed from 1 to 0 we still need to make the change!!
         try:
+            a = Products.objects.filter(foreign_product_id=product_foreign_id)
+            print ("this is a {}".format(a))
             this_product = Products.objects.get(foreign_product_id=product_foreign_id)
-        except Products.DoesNotExist:
+
+            print('success product_id')
+        except Exception as e:
+            print(e)
             this_product = Products.objects.get(foreign_product_id_2=product_foreign_id)
         edit_inventory = False
         add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
@@ -230,4 +236,4 @@ def print_order(order):
 
 
 if __name__ == '__main__':
-    import_orders('C:\\Users\\dekel\\Desktop\\maccabis_django\\maccabis\\Orders\\ordersFiles')
+    import_orders(r'C:\Users\dekel\Desktop\maccabis_django\fromWebsite_Pesah2019')
