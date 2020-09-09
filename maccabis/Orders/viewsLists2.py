@@ -5,13 +5,21 @@ from .models import OrdersList, Customer, ProductOrderHelper, Products, ProductC
 import datetime
 # import pdb
 
-ACTIONS_CHOICES = {0: 'Confirm',
-                   1: 'GoToFridge',
-                   2: 'FinishedFridge',
-                   3: 'Checked',
-                   4: 'Done',
-                   5: 'Nothing'}
+ACTIONS_CHOICES = { 1: 'עבור_למקרר',
+                    2: 'נאסף',
+                    3: 'נאסף',
+                    4: 'נבדק',
+                    5: 'נבדק',
+                    6: 'הסתיים',
+                    7: 'כלום'}
 
+BACK_ACTIONS_CHOICES = {1: 'כלום',
+                        2: 'עוד לא הגיעו',
+                        3: 'עוד לא הגיעו',
+                        4: 'המתנה למקרר',
+                        5: 'המתנה למקרר',
+                        6: 'המתנה לבדיקה',
+                        7: 'המתנה לתשלום'}
 
 class OrderDetailView(DetailView):
     model = OrdersList
@@ -26,44 +34,79 @@ class OrderDetailView(DetailView):
         total = 0
         for obj in temp_objects:
             total = total+ obj.number_of_packages * obj.product_id.price
+
+        # check if total is the same as total in ordersList
+        # (this is temporary to make sure we can use total in ordersList)
+        if total != self.object.total_price:
+            print("!!!!!!!!!! total is different from total in orderslist: ", total, " vs ", self.object.total_price)
+
+
         context["total_price"] = total
         # action (according to status):
         self.object = self.get_object()  # change to this_object?
         status_int = int(self.object.status)
         print("order status: ", status_int)
 
+        # if current status is 2 (waiting for frig)
+        # we turn it to 3 (preparing in frig) while inside the order/
+        # same for status 4 (ready to check) and 5 (checking)
+        # if status_int == 2:
+        #     status_int = 3
+        # if status_int == 4:
+        #     status_int = 5
+
+        status_str_new = str(status_int)
+        self.object.status = status_str_new
+
+        self.object.save()
+
         context["action"] = ACTIONS_CHOICES[status_int]
+        context["back_action"] = BACK_ACTIONS_CHOICES[status_int]
         context["comment"] = self.object.notes
 
         # set classes:
         context["confirmed_class"] = "notDone"
         context["here_to_take_class"] = "notDone"
+        context["preparing_class"] = "notDone"
         context["ready_to_check_class"] = "notDone"
+        context["checking_class"] = "notDone"
         context["ready_to_pay_class"] = "notDone"
         context["done_class"] = "notDone"
-        if status_int > 0:
+        if status_int > 1:
             context["confirmed_class"] = "done"
-            if status_int > 1:
+            if status_int > 2:
                 context["here_to_take_class"] = "done"
-                if status_int > 2:
-                    context["ready_to_check_class"] = "done"
-                    if status_int > 3:
-                        context["ready_to_pay_class"] = "done"
-                        if status_int > 4:
-                            context["done_class"] = "done"
+                if status_int > 3:
+                    context["preparing_class"] = "done"
+                    if status_int > 4:
+                        context["ready_to_check_class"] = "done"
+                        if status_int > 5:
+                            context["checking_class"] = "done"
+                            if status_int > 6:
+                                context["ready_to_pay_class"] = "done"
+                                if status_int > 7:
+                                    context["done_class"] = "done"
 
-        if self.object.take_on_friday:
-            context["b_take_on_friday"] = True
+        # if self.object.take_on_friday:
+        #     context["b_take_on_friday"] = True
+        # else:
+        #     context["b_take_on_friday"] = False
+        if self.object.pre_prepared:
+            context["b_pre_prepared"] = True
         else:
-            context["b_take_on_friday"] = False
-        if self.object.delivery:
+            context["b_pre_prepared"] = False
+        if self.object.delivery_method == 3 | self.object.delivery_method == 4:
             context["delivery"] = True
         else:
             context["delivery"] = False
-        if self.object.for_second_holiday:
-            context["b_second_holiday"] = True
+        if self.object.payed:
+            context["b_payed"] = True
         else:
-            context["b_second_holiday"] = False
+            context["b_payed"] = False
+        # if self.object.for_second_holiday:
+        #     context["b_second_holiday"] = True
+        # else:
+        #     context["b_second_holiday"] = False
 
         return context
 
@@ -72,48 +115,166 @@ class OrderDetailView(DetailView):
         # what was the action?
         print(request.POST)
         status_int_old = int(self.object.status)
+
+        # reversing what we did in get_context_data() for status 2/4
+        # if status_int_old == 3:
+        #     status_int_old = 2
+        # if status_int_old == 5:
+        #     status_int_old = 4
+
         print("old status: ", str(status_int_old))
         if 'GoToNextStep' in request.POST:
-            # self.object.confirmed_time = datetime.datetime.now()
-            status_str_new = str(min(5, status_int_old + 1))
+            text = request.POST.get("GoToNextStep", "")
+            print(text)
+            if text == 'עבור_למקרר':
+                status_new = 2
+            if text == 'נאסף':
+                status_new = 4
+                # finished frige also means we need to reduce from inventory:
+                remove_order_from_inventory(self.object)
+            if text == 'נבדק':
+                status_new = 6
+            if text == 'הסתיים':
+                status_new = 7
+            if text == 'כלום':
+                status_new = 7
+            status_str_new = str(status_new)
             self.object.status = status_str_new
             print("in GoToNextStep - order status: ", self.object.status)
             self.object.save()
             set_status_time(self.object, status_str_new)
 
-            # print("GoToNextStep time:", self.object.confirmed_time,  type(self.object), type(self.object.confirmed_time))
-
-            if status_int_old == 2:
-                # if this was for finishedFridge (status was 2 (hereToTake) and now is 3 (readyToCheck) ) -
-                # remove the products from inventory:
-                remove_order_from_inventory(self.object)
-
             return redirect_to_list(status_int_old)
 
         if 'GoToPrevStep' in request.POST:
-            status_str_new = str(max(0, status_int_old - 1))
+            text = request.POST.get("GoToPrevStep", "")
+            print(text)
+            if text == 'חזור לכלום':
+                status_new = 1
+            if text == 'חזור לעוד לא הגיעו':
+                status_new = 1
+            if text == 'חזור להמתנה למקרר':
+                status_new = 2
+            if text == 'חזור להמתנה לבדיקה':
+                status_new = 4
+                # going back from this step means returning to frig,
+                # so we also need to return the products to inventory:
+                restore_order_to_inventory(self.object)
+            if text == 'חזור להמתנה לתשלום':
+                status_new = 6
+
+            status_str_new = str(status_new)
             self.object.status = status_str_new
             print("in GoToPrevStep - order status: ", self.object.status)
             self.object.save()
             set_status_time(self.object, status_str_new)
-            # print("GoToNextStep time:", self.object.confirmed_time,  type(self.object), type(self.object.confirmed_time))
-
-            if status_int_old == 3:
-                # if status was 3 (readyToCheck) and now is 2 (hereToTake)
-                # restore the products to inventory (delete lines of 'taken' from counter):
-                restore_order_to_inventory(self.object)
 
             return redirect_to_list(status_int_old)
 
         if 'editOrder' in request.POST:
             this_order = self.get_object().id
             request.session['order_num'] = this_order
-            if status_int_old > 2: # ready to check or higher
+            if status_int_old > 3:  # ready to check or higher
                 edit_inventory = True
             else:
                 edit_inventory = False
             request.session['edit_inventory'] = edit_inventory
             return redirect('../editOrder/')
+
+        if 'printOrder' in request.POST:
+            this_order = self.get_object().id
+            request.session['order_num'] = this_order
+            return redirect('../ordersPrint/' + str(this_order))
+
+
+class OrderPrintDetailView(DetailView):
+    model = OrdersList
+    template_name = "orders/order_for_printing.html"
+
+    def  get_context_data(self, **kwargs):
+        context = super(OrderPrintDetailView, self).get_context_data(**kwargs)
+        context["customer"] = Customer.objects.get(id=self.object.customer_id.id)
+        context["products_in_order"] = ProductOrderHelper.objects.filter(order_id=self.object.id).order_by('product_id__id')
+        temp_objects = ProductOrderHelper.objects.filter(order_id=self.object.id)
+        # .aggregate(total=Sum('progress', field="progress*estimated_days"))['total'])
+        total = 0
+        for obj in temp_objects:
+            total = total+ obj.number_of_packages * obj.product_id.price
+
+        # check if total is the same as total in ordersList
+        # (this is temporary to make sure we can use total in ordersList)
+        if total != self.object.total_price:
+            print("!!!!!!!!!! total is different from total in orderslist: ", total, " vs ", self.object.total_price)
+
+
+        context["total_price"] = total
+        # action (according to status):
+        self.object = self.get_object()  # change to this_object?
+        status_int = int(self.object.status)
+        print("order status: ", status_int)
+
+        # if current status is 2 (waiting for frig)
+        # we turn it to 3 (preparing in frig) while inside the order/
+        # same for status 4 (ready to check) and 5 (checking)
+        if status_int == 2:
+            status_int = 3
+        if status_int == 4:
+            status_int = 5
+
+        status_str_new = str(status_int)
+        self.object.status = status_str_new
+
+        self.object.save()
+
+        context["action"] = ACTIONS_CHOICES[status_int]
+        context["back_action"] = BACK_ACTIONS_CHOICES[status_int]
+        context["comment"] = self.object.notes
+
+        # set classes:
+        context["confirmed_class"] = "notDone"
+        context["here_to_take_class"] = "notDone"
+        context["preparing_class"] = "notDone"
+        context["ready_to_check_class"] = "notDone"
+        context["checking_class"] = "notDone"
+        context["ready_to_pay_class"] = "notDone"
+        context["done_class"] = "notDone"
+        if status_int > 1:
+            context["confirmed_class"] = "done"
+            if status_int > 2:
+                context["here_to_take_class"] = "done"
+                if status_int > 3:
+                    context["preparing_class"] = "done"
+                    if status_int > 4:
+                        context["ready_to_check_class"] = "done"
+                        if status_int > 5:
+                            context["checking_class"] = "done"
+                            if status_int > 6:
+                                context["ready_to_pay_class"] = "done"
+                                if status_int > 7:
+                                    context["done_class"] = "done"
+
+        # if self.object.take_on_friday:
+        #     context["b_take_on_friday"] = True
+        # else:
+        #     context["b_take_on_friday"] = False
+        if self.object.pre_prepared:
+            context["b_pre_prepared"] = True
+        else:
+            context["b_pre_prepared"] = False
+        if self.object.delivery_method == 3 | self.object.delivery_method == 4:
+            context["delivery"] = True
+        else:
+            context["delivery"] = False
+        if self.object.payed:
+            context["b_payed"] = True
+        else:
+            context["b_payed"] = False
+        # if self.object.for_second_holiday:
+        #     context["b_second_holiday"] = True
+        # else:
+        #     context["b_second_holiday"] = False
+
+        return context
 
 
 class ListViewOrdersList(ListView):
@@ -124,40 +285,66 @@ class ListViewOrdersList(ListView):
         context = super(ListViewOrdersList, self).get_context_data(**kwargs)
         context["list_title"] = get_title(self.kwargs['status'])
         if self.kwargs['status'] == 'all':
-            context["orders_list"] = OrdersList.objects.filter(take_on_friday=False, delivery=False)\
+            context["orders_list"] = OrdersList.objects.filter(pre_prepared=False, delivery=False)\
                 .order_by("foreign_order_id") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
-            context["orders_list_2"] = OrdersList.objects.filter(take_on_friday=True, delivery=False)\
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+            context["orders_list_2"] = OrdersList.objects.filter(pre_prepared=True, delivery=False)\
                 .order_by("foreign_order_id") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
             context["orders_list_3"] = OrdersList.objects.filter(delivery=True)\
                 .order_by("foreign_order_id") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
-            context["orders_list_4"] = OrdersList.objects.filter(for_second_holiday=True)\
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+            context["orders_list_4"] = OrdersList.objects.filter(pre_prepared=True)\
                 .order_by("foreign_order_id") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+
+        elif self.kwargs['status'] == 'all_by_time':
+            context["orders_list"] = OrdersList.objects.filter(pre_prepared=False, delivery=False) \
+                .order_by("pick_up_time") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+            context["orders_list_2"] = OrdersList.objects.filter(pre_prepared=True, delivery=False) \
+                .order_by("pick_up_time") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+            context["orders_list_3"] = OrdersList.objects.filter(delivery=True) \
+                .order_by("pick_up_time") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+            context["orders_list_4"] = OrdersList.objects.filter(pre_prepared=True) \
+                .order_by("pick_up_time") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time','total_price', 'payed','customer_id__email','customer_id__address_city')
+
+        elif self.kwargs['status'] == 'all_by_total_price':
+            context["orders_list"] = OrdersList.objects.filter(pre_prepared=False, delivery=False) \
+                .order_by("total_price") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'total_price', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+            context["orders_list_2"] = OrdersList.objects.filter(pre_prepared=True, delivery=False) \
+                .order_by("total_price") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'total_price', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+            context["orders_list_3"] = OrdersList.objects.filter(delivery=True) \
+                .order_by("total_price") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'total_price', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+            context["orders_list_4"] = OrdersList.objects.filter(pre_prepared=True) \
+                .order_by("total_price") \
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'total_price', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+
         else:
-            # context["orders_list"] = OrdersList.objects.filter(status=self.kwargs['status']).order_by("id")\
-            #      .values('id', 'customer_id__name')
             status_int = self.kwargs['status']
 
-            temp_list = OrdersList.objects.filter(status=status_int, take_on_friday=False, delivery=False)\
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
+            temp_list = OrdersList.objects.filter(status=status_int, delivery=False, pre_prepared=False)\
+                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
             sorted_list = sort_by_status_time(temp_list, status_int)
             context["orders_list"] = sorted_list
 
-            temp_list = OrdersList.objects.filter(status=status_int, take_on_friday=True, delivery=False)\
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes')
-            sorted_list = sort_by_status_time(temp_list, status_int)
-            context["orders_list_2"] = sorted_list
+            context["orders_list_2"] = []
 
             temp_list = OrdersList.objects.filter(status=status_int, delivery=True).values('id', 'foreign_order_id',
-                                                                            'customer_id__name', 'notes')
+                                                                            'customer_id__name', 'notes', 'pick_up_time',
+                                                                                           'total_price', 'payed','customer_id__email','customer_id__address_city')
             sorted_list = sort_by_status_time(temp_list, status_int)
             context["orders_list_3"] = sorted_list
 
-            temp_list = OrdersList.objects.filter(status=status_int, for_second_holiday=True).values('id', 'foreign_order_id',
-                                                                            'customer_id__name', 'notes')
+            temp_list = OrdersList.objects.filter(status=status_int, pre_prepared=True).values('id', 'foreign_order_id',
+                                                                            'customer_id__name', 'notes', 'pick_up_time',
+                                                                                               'total_price', 'payed','customer_id__email','customer_id__address_city')
             sorted_list = sort_by_status_time(temp_list, status_int)
             context["orders_list_4"] = sorted_list
 
@@ -183,11 +370,14 @@ class ListViewProducts(ListView):
 
     def get_context_data(self, **kwargs):
         context = super(ListViewProducts, self).get_context_data(**kwargs)
-        context["list_title"] = 'Products summary'
+        context["list_title"] = 'סיכום המוצרים'
         # summing:
         all_products = Products.objects.all()
         all_orders_lines = ProductOrderHelper.objects.all()
+        # all_orders_lines = ProductOrderHelper.objects.filter(order_id__take_on_friday=False)
         all_products_count_lines = ProductCounter.objects.all()
+
+        print(all_orders_lines)
 
         ProductsSummer.objects.all().delete()
         for product in all_products:
@@ -246,32 +436,36 @@ class ListViewProducts(ListView):
 
 
 def redirect_to_list(list_num):
-    if list_num == 0:
-        return redirect('../list_to_confirm/')
     if list_num == 1:
         return redirect('../list_confirmed/')
     if list_num == 2:
         return redirect('../list_here_to_take/')
     if list_num == 3:
-        return redirect('../list_ready_to_check/')
+        return redirect('../list_preparing_in_frig/')
     if list_num == 4:
-        return redirect('../list_ready_to_pay/')
+        return redirect('../list_ready_to_check/')
     if list_num == 5:
+        return redirect('../list_checking/')
+    if list_num == 6:
+        return redirect('../list_ready_to_pay/')
+    if list_num == 7:
         return redirect('../list_done/')
 
 
 def get_title(list_num):
-    if list_num == '0':
-        return 'orders to confirm'
     if list_num == '1':
         return 'orders confirmed'
     if list_num == '2':
         return 'orders waiting for fridge'
     if list_num == '3':
-        return 'orders ready to be checked'
+        return 'orders preparing in fridge'
     if list_num == '4':
-        return 'orders ready to pay'
+        return 'orders ready to be checked'
     if list_num == '5':
+        return 'orders checking'
+    if list_num == '6':
+        return 'orders ready to pay'
+    if list_num == '7':
         return 'orders done'
 
 
@@ -299,17 +493,19 @@ def restore_order_to_inventory(order):
 
 
 def sort_by_status_time(temp_list, status_str):
-    if status_str == '0':
-        return temp_list.order_by("id")
     if status_str == '1':
         return temp_list.order_by("id")
     if status_str == '2':
         return temp_list.order_by("here_to_take_time")
     if status_str == '3':
-        return temp_list.order_by("ready_to_check_time")
+        return temp_list.order_by("here_to_take_time")
     if status_str == '4':
-        return temp_list.order_by("ready_to_pay_time")
+        return temp_list.order_by("ready_to_check_time")
     if status_str == '5':
+        return temp_list.order_by("ready_to_check_time")
+    if status_str == '6':
+        return temp_list.order_by("ready_to_pay_time")
+    if status_str == '7':
         return temp_list.order_by("done_time")
 
 
@@ -326,14 +522,18 @@ def set_status_time(this_order, status_str):
         this_order.save()
         return
     if status_str == '3':
+        return
+    if status_str == '4':
         this_order.ready_to_check_time = time_now
         this_order.save()
         return
-    if status_str == '4':
+    if status_str == '5':
+        return
+    if status_str == '6':
         this_order.ready_to_pay_time = time_now
         this_order.save()
         return
-    if status_str == '5':
+    if status_str == '7':
         this_order.done_time = time_now
         this_order.save()
         return

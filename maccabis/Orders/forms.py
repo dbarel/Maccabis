@@ -13,21 +13,26 @@ class FormProductCounter(forms.ModelForm):
 
 
 class FormCustomer(forms.ModelForm):
+    address = forms.CharField(required=False)
+    address_city = forms.CharField(required=False)
+
     class Meta:
         model = Customer
         fields = [
             'name',
             'phone',
-            'email'
+            'email',
+            'address',
+            'address_city'
         ]
 
     def clean_email(self):
         print("in clean_email")
         email = self.cleaned_data.get('email')
         name = self.cleaned_data.get('name')
-        if email and Customer.objects.filter(email=email).exclude(name=name).exists():
-            print("in raise")
-            raise forms.ValidationError(u'Customer exist, if you want to add another order for the same customer, use Find customer.')
+        # if email and Customer.objects.filter(email=email).exclude(name=name).exists():
+        #     print("in raise")
+        #     raise forms.ValidationError(u'Customer exist, if you want to add another order for the same customer, use Find customer.')
         return email
 
 
@@ -53,15 +58,13 @@ class FormProduct(forms.ModelForm):
 
 class FormNote(forms.ModelForm):
     notes = forms.CharField(required=False, widget=forms.Textarea)
-    take_on_friday = forms.BooleanField(required=False)
-    delivery = forms.BooleanField(required=False)
-    for_second_holiday = forms.BooleanField(required=False)
+    pre_prepared = forms.BooleanField(required=False)
+    payed = forms.BooleanField(required=False)
 
     class Meta:
         model = OrdersList
         fields = [
             'notes',
-            'take_on_friday',
-            'delivery',
-            'for_second_holiday'
+            'pre_prepared',
+            'payed'
         ]

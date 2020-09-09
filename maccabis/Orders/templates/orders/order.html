@@ -1,22 +1,29 @@
 {% extends "orders/header.html" %}
 {% block content %}
-<div class="box {{confirmed_class}}"><h4>Confirmed</h4></div>
-<div class="box {{here_to_take_class}}"><h4>Here to take</h4></div>
-<div class="box {{ready_to_check_class}}"><h4>Ready to check</h4></div>
-<div class="box {{ready_to_pay_class}}"><h4>Ready to pay</h4></div>
-<div class="box {{done_class}}"><h4>Done</h4></div>
+<div class="box {{done_class}}"><h4>הסתיים</h4></div>
+<div class="box {{ready_to_pay_class}}"><h4>נבדק</h4></div>
+<div class="box {{ready_to_check_class}}"><h4>נאסף במקרר</h4></div>
+<div class="box {{here_to_take_class}}"><h4>הגיעו</h4></div>
+<div class="box {{confirmed_class}}"><h4>מאושר</h4></div>
 
     <h1 style="text-align:right;">הזמנה מספר {{object.foreign_order_id}}</h1>
     <h3 style="text-align:right;">{{object.customer_id}}, {{customer.email}}, {{customer.phone}}, order {{object.id}} </h3>
-    <h3 style="text-align:right; color:rgb(250, 20, 20)">{{comment}} :הערות</h3>
-    {% if b_take_on_friday %}
-        <div class="box done"><h4>לוקחים בשישי</h4></div>
-    {% endif %}
+    <h3 style="text-align:right; color:rgb(250, 20, 20)">הערות: {{comment}} </h3>
+    <h3 style="text-align:right; color:rgb(250, 20, 20)"> כתובת: {{customer.address}} {{customer.address_city}} </h3>
+    <!--{% if b_take_on_friday %}-->
+        <!--<div class="box done"><h4>לוקחים בשישי</h4></div>-->
+    <!--{% endif %}-->
     {% if b_delivery %}
         <div class="box done"><h4>משלוח</h4></div>
     {% endif %}
-    {% if b_second_holiday %}
-        <div class="box done"><h4>חג שני</h4></div>
+    <!--{% if b_second_holiday %}-->
+        <!--<div class="box done"><h4>חג שני</h4></div>-->
+    <!--{% endif %}-->
+    {% if b_pre_prepared %}
+        <div class="box done"><h4>מוכן מראש</h4></div>
+    {% endif %}
+    {% if b_payed %}
+        <div class="box done"><h4>שולם</h4></div>
     {% endif %}
     <div>
         <table style="width:100%">
@@ -45,8 +52,9 @@
         <div style="height: 30px; "></div>
         <form method="POST" action=""> {% csrf_token %}
             <input type="submit" value={{action}} name="GoToNextStep">
-            <input type="submit" value="move back to previous stage" name="GoToPrevStep">
-            <input type="submit" value="edit order" name="editOrder">
+            <input type="submit" value="חזור ל{{back_action}}" name="GoToPrevStep">
+            <input type="submit" value="ערוך הזמנה" name="editOrder">
+            <input type="submit" value="הדפס" name="printOrder">
         </form>
     </div>
 

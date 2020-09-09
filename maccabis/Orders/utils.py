@@ -1,8 +1,8 @@
 import datetime
-from .models import ProductOrderHelper, ProductCounter
+from .models import ProductOrderHelper, ProductCounter, Products, OrdersList
 
 
-def add_order_line_to_helper(this_order, this_product, quantity, edit_inventory):
+def add_order_line_to_helper(this_order: OrdersList, this_product: Products, quantity: int, edit_inventory):
     # first check if a line with this order number and this product exists:
     all_lines_from_this_order = ProductOrderHelper.objects.filter(order_id=this_order, product_id=this_product)
 
@@ -14,6 +14,11 @@ def add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
         print("line added! line num:", order_line.id, "order num: ", order_line.order_id, "prod:",
               order_line.product_id, order_line.number_of_packages, "datetime: ", order_line.time)
         # according to status, we might need to remove these items from inventory:
+
+        # add this product's price to total price of this order:
+        this_order.total_price += this_product.price*quantity
+        this_order.save()
+
         if edit_inventory:
             print('in edit ...')
             quantity_diff = quantity
@@ -44,6 +49,11 @@ def add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
               "datetime: ", all_lines_from_this_order[0].time,
               "changes: ", all_lines_from_this_order[0].changes)
         quantity_diff = quantity - old_quantity
+
+        # amend price in total price of this order:
+        this_order.total_price += this_product.price*quantity_diff
+        this_order.save()
+
         if edit_inventory:
             if quantity_diff > 0:
                 # remove quantity_diff from storage

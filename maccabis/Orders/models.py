@@ -5,6 +5,8 @@ class Customer(models.Model):
     name = models.CharField(max_length=50)
     phone = models.CharField(max_length=15)  # convert to regexp (from form?)
     email = models.EmailField(max_length=254, )
+    address = models.CharField(max_length=150, default="")
+    address_city = models.CharField(max_length=50, default="")
 
     def __str__(self):
         return self.name
@@ -55,12 +57,13 @@ class ProductOrderHelper(models.Model):
 
 
 STATUS_CHOICES = (
-    ('0', 'added'),
     ('1', 'confirmed'),
     ('2', 'hereToTake'),
-    ('3', 'readyToCheck'),
-    ('4', 'readyToPay'),
-    ('5', 'done')
+    ('3', 'preparingInRefrigerator'),
+    ('4', 'readyToCheck'),
+    ('5', 'checking'),
+    ('6', 'readyToPay'),
+    ('7', 'done')
 )
 
 
@@ -72,11 +75,16 @@ class OrdersList(models.Model):
     ready_to_check_time = models.DateTimeField(null=True, blank=True)
     ready_to_pay_time = models.DateTimeField(null=True, blank=True)
     done_time = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='0')
+    status = models.CharField(max_length=1, choices=STATUS_CHOICES, default='1')
     notes = models.TextField()
-    take_on_friday = models.BooleanField(default=False)
-    delivery = models.BooleanField(default=False)
-    for_second_holiday = models.BooleanField(default=False)
+    # take_on_friday = models.BooleanField(default=False)
+    # delivery = models.BooleanField(default=False)
+    # for_second_holiday = models.BooleanField(default=False)
+    pre_prepared = models.BooleanField(default=False)
+    payed = models.BooleanField(default=False)
+    pick_up_time = models.DateTimeField(null=True, blank=True)
+    total_price = models.IntegerField(default=0)
+    delivery_method = models.IntegerField(default=0)
 
     def __str__(self):
         return str(self.id)

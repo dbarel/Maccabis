@@ -3,27 +3,60 @@ from django.forms import modelformset_factory
 from .forms import FormCustomer, FormProductCounter, FormNote
 from .models import Products, TempOrder, OrdersList, Customer, ProductCounter, ProductOrderHelper
 from .utils import add_order_line_to_helper
-from .export_import_xls import export_orders, export_inventory, import_orders, export_meta_data
+from .export_import_xls import export_orders, export_inventory, import_orders, export_meta_data,import_product_ids,export_orders_list
 import datetime
 # import pdb
+import os
 
 
 # Notes for updating the tool for a new holiday:
 # 1) clean the database by: flush
+# 2) add new superuser by: createsuperuser
+# 3) add products (from excel)
+# 4)
+
 def index(request):
     return render(request, 'orders/home.html')
 
 
+def customers_view(request):
+    orders_now_in_fridge = OrdersList.objects.filter(status=3)
+    orders_waiting_for_fridge = OrdersList.objects.filter(status=2)
+    orders_now_in_checking = OrdersList.objects.filter(status=5)
+    orders_waiting_for_checking = OrdersList.objects.filter(status=4)
+    context = {
+        "orders_now_in_fridge": orders_now_in_fridge,
+        "orders_waiting_for_fridge": orders_waiting_for_fridge,
+        "orders_now_in_checking": orders_now_in_checking,
+        "orders_waiting_for_checking": orders_waiting_for_checking,
+    }
+
+    return render(request, 'orders/customersView.html', context)
+
+
 def manage(request):
-    # for now - instead of import/export - do calculation of orders:
+    path_maccabisDjango = os.path.join(os.getcwd(), '..')
+
+    if Products.objects.count() > 0:
+        print("products already exist.  won't read the file...")
+    else:
+        print("reading products from file")
+        import_product_ids(os.path.join(path_maccabisDjango, 'ids', 'product_export.xlsx'))
+
+    # activate this line (with proper path to import new orders!!)
+
     # print('importing...')
-    # import_orders(r'C:\Users\dekel\Desktop\maccabis_django\fromWebsite_roshHashana2018')
+    import_orders(os.path.join(path_maccabisDjango, 'fromWebsite_RoshHashana2020'))
 
-    import_orders(r'C:\Users\dekel\Desktop\maccabis_django\fromWebsite_Pesah2019')
+    #import_orders(os.path.join('..', 'fromWebsite_Pesah2019'))
+    export_inventory(path_maccabisDjango)
 
-    print('exporting all...')
-    path = 'C:\\Users\\dekel\\Desktop\\maccabis_django\\'
-    export_orders(path)
+    #print('exporting all...')
+    # path = os.path.join('..')
+    # path = 'C:\\Users\\dekel\\Desktop\\maccabis_django\\'
+
+    #export_orders(path)
+    export_orders_list(path_maccabisDjango)
     #export_inventory(path)
     #context = {
     #    "str_orders": "orders exported to: " + path,
@@ -32,8 +65,8 @@ def manage(request):
 
     # count and print summary of orders:
     all_orders_count = OrdersList.objects.count()
-    orders_not_here_yet = OrdersList.objects.filter(status=0).count() + OrdersList.objects.filter(status=1).count()
-    orders_done = OrdersList.objects.filter(status=5).count()
+    orders_not_here_yet = OrdersList.objects.filter(status=1).count()
+    orders_done = OrdersList.objects.filter(status=7).count()
 
     context = {
         "str_orders": "all orders " + str(all_orders_count),
@@ -43,17 +76,18 @@ def manage(request):
 
     # Meta data: used for saving data about the orders (timing etc..)
     # for Maccais internal use. not needed in real time.
-    # all_orders = OrdersList.objects.all()
-    # for order in all_orders:
-    #     order.status = 1
-    #     order.save()
-    #path = 'C:\\Users\\dekel\\Desktop\\Maccabis-master\\'
+    #all_orders = OrdersList.objects.all()
+    #for order in all_orders:
+    #    order.status = 1
+    #    order.save()
+    #path = r'C:\Users\dekel\Desktop\maccabis_django\maccabis\Orders\metadata'
     #export_meta_data(path)
 
     return render(request, 'orders/exported.html', context)
 
 
 def orders_export_all(request):
+
     path = r'C:\Users\user\Desktop\Orders\Pesah2018Orders'
     export_orders(path)
     export_inventory(path)
@@ -73,6 +107,7 @@ def inventory_export(request):
 
 
 def manage_product(request, pk):
+
     print("beginning of manage_product")
     form = FormProductCounter(request.POST or None)
     this_product = Products.objects.get(id=pk)
@@ -308,6 +343,18 @@ def edit_order(request):
         # edit_inventory = request.session.get('edit_inventory')
         s_edit_order = "edit order number: " + str(this_order_id)
         print("edit order number: ", this_order_id)
+
+        # customer form:
+        this_order = OrdersList.objects.get(id=this_order_id)
+
+        this_customer = Customer.objects.get(id=this_order.customer_id.id)
+
+        init_data_customer = {'name': this_customer.name, 'phone': this_customer.phone,
+                     'email': this_customer.email,
+                     'address': this_customer.address,
+                     'address_city': this_customer.address_city}
+        form_customer = FormCustomer(request.POST or None, initial=init_data_customer)
+
         all_items_this_order = ProductOrderHelper.objects.filter(order_id=this_order_id)
 
         # new temp order:
@@ -326,16 +373,19 @@ def edit_order(request):
         formset_product = modelformset_factory(TempOrder, fields=('product_name', 'price', 'number_of_packs'), extra=0)
         formset = formset_product(request.POST or None, queryset=TempOrder.objects.all(), )
 
-        this_order = OrdersList.objects.get(id=this_order_id)
         existing_note = this_order.notes
         if existing_note:
             print(existing_note)
-            init_data = {'notes': str(existing_note), 'take_on_friday': this_order.take_on_friday,
-                         'delivery': this_order.delivery, 'for_second_holiday': this_order.for_second_holiday}
+            init_data = {'notes': str(existing_note), 'pre_prepared': this_order.pre_prepared,
+                         'payed': this_order.payed}
+            # init_data = {'notes': str(existing_note), 'delivery': this_order.delivery, 'pre_prepared': this_order.pre_prepared,
+            #              'payed': this_order.payed}
             form_note = FormNote(request.POST or None, initial=init_data)
         else:
-            init_data = {'take_on_friday': this_order.take_on_friday,
-                         'delivery': this_order.delivery, 'for_second_holiday': this_order.for_second_holiday}
+            init_data = {'pre_prepared': this_order.pre_prepared,
+                         'payed': this_order.payed}
+            # init_data = {'delivery': this_order.delivery, 'pre_prepared': this_order.pre_prepared,
+            #              'payed': this_order.payed}
             form_note = FormNote(request.POST or None, initial=init_data)
 
         # render:
@@ -343,6 +393,7 @@ def edit_order(request):
             "formset1": formset,
             "s_order_num": s_edit_order,
             "form_note": form_note,
+            "form_customer": form_customer,
         }
 
         return render(request, 'orders/editOrder.html', context)
@@ -353,12 +404,26 @@ def edit_order(request):
         formset_product = modelformset_factory(TempOrder, fields=('product_name', 'price', 'number_of_packs'), extra=0)
         formset = formset_product(request.POST or None, queryset=TempOrder.objects.all(), )
         form_note = FormNote(request.POST or None)
+        form_customer= FormCustomer(request.POST or None)
 
         # update order:
-        if formset.is_valid():
+        if form_customer.is_valid() & formset.is_valid():
             # add order details:
             print(order_num)
             this_order = OrdersList.objects.get(id=order_num)
+            this_customer = Customer.objects.get(id=this_order.customer_id.id)
+            if form_customer.data['name'] != this_customer.name:
+                this_customer.name = form_customer.data['name']
+            if form_customer.data['phone'] != this_customer.phone:
+                this_customer.phone = form_customer.data['phone']
+            if form_customer.data['email'] != this_customer.email:
+                this_customer.email = form_customer.data['email']
+            if form_customer.data['address'] != this_customer.address:
+                this_customer.address = form_customer.data['address']
+            if form_customer.data['address_city'] != this_customer.address_city:
+                this_customer.address_city = form_customer.data['address_city']
+            this_customer.save()
+
             print("this order:", this_order)
             print("this_order.id:", this_order.id)
 
@@ -391,9 +456,9 @@ def edit_order(request):
 
                 # update boolean fields:
                 # print(form_note.cleaned_data, type(form_note.cleaned_data))
-                this_order.take_on_friday = form_note.cleaned_data.get('take_on_friday')
-                this_order.delivery = form_note.cleaned_data.get('delivery')
-                this_order.for_second_holiday = form_note.cleaned_data.get('for_second_holiday')
+                # this_order.delivery = form_note.cleaned_data.get('delivery')
+                this_order.pre_prepared = form_note.cleaned_data.get('pre_prepared')
+                this_order.payed = form_note.cleaned_data.get('payed')
                 this_order.save()
 
         return redirect('../orders/'+str(order_num))
