@@ -1,0 +1,104 @@
+{% load static %}
+<link rel="stylesheet" type="text/css"  href="{% static 'maccabis\css\style.css' %}" />
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Maccabis Holidays Orders</title>
+	<meta charset="utf-8" />
+	{% load staticfiles %}
+	<link rel="stylesheet" href="{% static 'maccabis/css/bootstrap.min.css' %}" type = "text/css"/>
+	<meta name="viewport" content = "width=device-width, initial-scale=1.0">
+
+	<style type="text/css">
+		html,
+		body {
+		  height:100%
+		}
+
+		table {
+			font-family: arial, sans-serif;
+			border-collapse: collapse;
+			width: 100%;
+		}
+
+		td, th {
+			border: 1px solid #dddddd;
+			text-align: left;
+			padding: 8px;
+			text-align: right;
+		}
+
+		tr:nth-child(even) {
+			background-color: #dddddd;
+		}
+	</style>
+</head>
+
+<body class="body" style="background-color:#f6f6f6">
+	<div class="container-fluid" style="min-height:95%; ">
+		<div class="row">
+			  <div class="col-sm-1">
+			  </div>
+			  <div class="col-sm-3">
+				  <center>
+				  <!--<img src="{% static 'maccabis/img/maccabisLogo.png' %}" class="responsive-img" style='max-height:60px;' alt="logo">-->
+
+				  </center>
+			  </div>
+			  <div class="col-sm-8">
+				  <br>
+				  <center>
+                      <h2 style="text-align:right; font-size:20; font-weight:bold;">הזמנה מספר {{object.foreign_order_id}}</h2>
+				      <h3 style="text-align:right;font-size:16; ">{{object.customer_id}}, {{customer.email}}, {{customer.phone}}, order {{object.id}} </h3>
+                      <h3 style="text-align:right;font-size:16;  color:rgb(250, 20, 20)">הערות: {{customer.address}} {{customer.address_city}}</h3>
+                      <h3 style="text-align:right;font-size:16;  color:rgb(250, 20, 20)">הערות: {{comment}}</h3>
+                  </center>
+			  </div>
+		</div><hr>
+
+
+    <div>
+        <div class="col-sm-2">
+
+        </div>
+        <div class="col-sm-10">
+        <table style="font-size:12;">
+            <colgroup>
+                <col span="1" style="width: 33%;">
+                <col span="1" style="width: 10%;">
+                <col span="1" style="width: 10%;">
+                <col span="1" style="width: 30%;">
+            </colgroup>
+            <tr >   <th>הערות</th><th>כמות</th><th>מחיר</th><th>שם המוצר</th></tr>
+            {% for product in products_in_order %}
+                <tr>
+                    <td >{{ product.changes }}</td>
+                    <td >{{ product.number_of_packages }}</td>
+                    <td >{{ product.product_id.price }}</td>
+                    <td >{{ product.product_id }}</td>
+
+                </tr>
+            {%endfor%}
+        </table>
+
+        <h4 style="text-align:right; font-size:16; font-weight:bold;">    סכום: {{total_price}}<span> ש"ח</span> </h4>
+                    </div>
+    </div>
+	</div>
+
+
+	<footer>
+
+	</footer>
+
+</body>
+
+</html>
+
+{% block content %}
+
+
+
+{% endblock %}

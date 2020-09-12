@@ -5,6 +5,12 @@ from .models import OrdersList, Customer, ProductOrderHelper, Products, ProductC
 import datetime
 # import pdb
 
+all_deliveries_methods = ["איסוף עצמי ביום חמישי",
+                          "איסוף עצמי ביום שישי",
+                          "משלוח ביום חמישי",
+                          "משלוח ביום שישי",
+                          "משלוח מחוץ למודיעין"]
+
 ACTIONS_CHOICES = { 1: 'עבור_למקרר',
                     2: 'נאסף',
                     3: 'נאסף',
@@ -284,69 +290,39 @@ class ListViewOrdersList(ListView):
     def get_context_data(self, **kwargs):
         context = super(ListViewOrdersList, self).get_context_data(**kwargs)
         context["list_title"] = get_title(self.kwargs['status'])
+        context["all_deliveries_methods"] = all_deliveries_methods
+
+        show_all = False
         if self.kwargs['status'] == 'all':
-            context["orders_list"] = OrdersList.objects.filter(pre_prepared=False, delivery=False)\
-                .order_by("foreign_order_id") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            context["orders_list_2"] = OrdersList.objects.filter(pre_prepared=True, delivery=False)\
-                .order_by("foreign_order_id") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            context["orders_list_3"] = OrdersList.objects.filter(delivery=True)\
-                .order_by("foreign_order_id") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            context["orders_list_4"] = OrdersList.objects.filter(pre_prepared=True)\
-                .order_by("foreign_order_id") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-
+            show_all = True
+            string_order_by = "foreign_order_id"
         elif self.kwargs['status'] == 'all_by_time':
-            context["orders_list"] = OrdersList.objects.filter(pre_prepared=False, delivery=False) \
-                .order_by("pick_up_time") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            context["orders_list_2"] = OrdersList.objects.filter(pre_prepared=True, delivery=False) \
-                .order_by("pick_up_time") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            context["orders_list_3"] = OrdersList.objects.filter(delivery=True) \
-                .order_by("pick_up_time") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            context["orders_list_4"] = OrdersList.objects.filter(pre_prepared=True) \
-                .order_by("pick_up_time") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time','total_price', 'payed','customer_id__email','customer_id__address_city')
-
+            show_all = True
+            string_order_by = "pick_up_time"
         elif self.kwargs['status'] == 'all_by_total_price':
-            context["orders_list"] = OrdersList.objects.filter(pre_prepared=False, delivery=False) \
-                .order_by("total_price") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'total_price', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            context["orders_list_2"] = OrdersList.objects.filter(pre_prepared=True, delivery=False) \
-                .order_by("total_price") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'total_price', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            context["orders_list_3"] = OrdersList.objects.filter(delivery=True) \
-                .order_by("total_price") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'total_price', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            context["orders_list_4"] = OrdersList.objects.filter(pre_prepared=True) \
-                .order_by("total_price") \
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'total_price', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+            show_all = True
+            string_order_by = "total_price"
 
-        else:
+        if show_all:
+            all_orders_lists = []
+            for i in range(len(all_deliveries_methods)):
+                all_orders_lists_temp = OrdersList.objects.filter(delivery_method=i+1)\
+                    .order_by(string_order_by) \
+                    .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
+                all_orders_lists.append(all_orders_lists_temp)
+
+        else:  # not show_all:
             status_int = self.kwargs['status']
 
-            temp_list = OrdersList.objects.filter(status=status_int, delivery=False, pre_prepared=False)\
-                .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price', 'payed','customer_id__email','customer_id__address_city')
-            sorted_list = sort_by_status_time(temp_list, status_int)
-            context["orders_list"] = sorted_list
+            all_orders_lists = []
+            for i in range(len(all_deliveries_methods)):
+                temp_list = OrdersList.objects.filter(status=status_int, delivery_method=i + 1) \
+                    .values('id', 'foreign_order_id', 'customer_id__name', 'notes', 'pick_up_time', 'total_price',
+                            'payed', 'customer_id__email', 'customer_id__address_city')
+                sorted_list = sort_by_status_time(temp_list, status_int)
+                all_orders_lists.append(sorted_list)
 
-            context["orders_list_2"] = []
-
-            temp_list = OrdersList.objects.filter(status=status_int, delivery=True).values('id', 'foreign_order_id',
-                                                                            'customer_id__name', 'notes', 'pick_up_time',
-                                                                                           'total_price', 'payed','customer_id__email','customer_id__address_city')
-            sorted_list = sort_by_status_time(temp_list, status_int)
-            context["orders_list_3"] = sorted_list
-
-            temp_list = OrdersList.objects.filter(status=status_int, pre_prepared=True).values('id', 'foreign_order_id',
-                                                                            'customer_id__name', 'notes', 'pick_up_time',
-                                                                                               'total_price', 'payed','customer_id__email','customer_id__address_city')
-            sorted_list = sort_by_status_time(temp_list, status_int)
-            context["orders_list_4"] = sorted_list
+        context["all_orders_lists"] = zip(all_orders_lists, all_deliveries_methods)
 
         context["link_page_name"] = 'orders'
         return context

@@ -1,0 +1,107 @@
+{% load static %}
+<link rel="stylesheet" type="text/css"  href="{% static 'maccabis\css\style.css' %}" />
+
+<!DOCTYPE html>
+<html lang="he">
+
+<head>
+	<title>Maccabis Holidays Orders</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="refresh" content="2">
+	{% load staticfiles %}
+	<link rel="stylesheet" href="{% static 'maccabis/css/bootstrap.min.css' %}" type = "text/css"/>
+	<meta name="viewport" content = "width=device-width, initial-scale=1.0">
+
+	<style type="text/css">
+		html,
+		body {
+		  height:100%
+		}
+
+		table {
+			font-family: arial, sans-serif;
+			border-collapse: collapse;
+			width: 100%;
+		}
+
+		td, th {
+			border: 1px solid #dddddd;
+			text-align: left;
+			padding: 8px;
+			text-align: right;
+		}
+
+		tr:nth-child(even) {
+			background-color: #dddddd;
+		}
+	</style>
+</head>
+
+<body class="body" style="background-color:#f6f6f6">
+	<div class="container-fluid" style="min-height:95%; ">
+		<div class="row">
+			  <div class="col-sm-2">
+				  <br>
+				  <center>
+
+				  </center>
+			  </div>
+			  <div class="col-sm-8">
+				  <center>
+				  <img src="{% static 'maccabis/img/maccabisLogo.png' %}" class="responsive-img" style='max-height:100px;' alt="logo">
+
+				  </center>
+			  </div>
+			  <div class="col-sm-2">
+				  <br>
+				  <center>
+
+				  </center>
+			  </div>
+		</div><hr>
+
+		<div class="row" style="text-align: center;  direction: rtl; font-size: 40px; color:#4e402f">
+			חג שמח!
+			בהגיעכם, נא לגשת לעמדת הקבלה
+			<br>
+			<div class="col-sm-1" style=" min-height:70%"></div>
+
+			<div class="col-sm-4" style="text-align: center;background-color: #9fb7a0; min-height:70%; border-radius: 25px; box-shadow: 0 0 3pt 2pt #4e402f">
+				<h3 style="font-size:28px; font-weight:bold">מסירה ללקוח</h3>
+				{% for order in orders_now_in_checking %}
+				<h5 style="font-weight:bold; font-size:32px; color:#931b1d">{{ order.foreign_order_id }}</h5>
+				{% endfor %}
+				<br>
+				<h4 style="font-size:24px; font-weight:bold; direction: rtl; text-decoration-line: overline underline; text-decoration-style: double;">
+					  הבא בתור  </h4>
+				{% for order in orders_waiting_for_checking %}
+				<h5 style="font-weight:bold; font-size:32px">{{ order.foreign_order_id }}</h5>
+				{% endfor %}
+			</div>
+
+			<div class="col-sm-2" style=" min-height:70%"></div>
+
+			<div class="col-sm-4" style="direction: rtl; text-align: center; background-color: #f5f4c0; min-height:70%; border-radius: 25px; box-shadow: 0 0 3pt 2pt #4e402f">
+				<h3 style="font-size:28px; font-weight:bold">הזמנות בהכנה</h3>
+				{% for order in orders_now_in_fridge %}
+				<h5 style="font-weight:bold; font-size:32px; color:#931b1d">{{ order.foreign_order_id }}</h5>
+				{% endfor %}
+				<br>
+				<h4 style="font-size:24px;font-weight:bold; direction: rtl; text-decoration-line: overline underline; text-decoration-style: double;">
+					  הבא בתור  </h4>
+				{% for order in orders_waiting_for_fridge %}
+				<h5 style="font-weight:bold; font-size:32px">{{ order.foreign_order_id }}</h5>
+				{% endfor %}
+			</div>
+			<div class="col-sm-1" style=" min-height:70%"></div>
+
+		  </div>
+		</div>
+	</div>
+	<footer>
+
+	</footer>
+
+</body>
+
+</html>

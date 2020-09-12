@@ -171,13 +171,14 @@ def send_order_to_db(extern_order):
     # parse delivery method and time:
     this_delivery_method = extern_order['delivery_method_and_time']
     for i in range(len(all_deliveries_methods)):
-        if this_delivery_method.find(all_deliveries_methods[i]):
+        if this_delivery_method.find(all_deliveries_methods[i]) == 0:
             delivery_method = i+1
+            pick_up_time = datetime.datetime.now()
             break
 
     # add order:
     this_order = OrdersList(customer_id=this_customer, foreign_order_id=extern_order['order_num'],
-                            notes=extern_order['notes'], pick_up_time=extern_order['pick_up_time'],
+                            notes=extern_order['notes'], pick_up_time=pick_up_time,
                             payed=extern_order['payed'], delivery_method=delivery_method)
 
     this_order.save()
@@ -202,6 +203,16 @@ def send_order_to_db(extern_order):
         except Exception as e:
             print(e)
             this_product = Products.objects.get(foreign_product_id_2=product_foreign_id)
+        edit_inventory = False
+        add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
+
+    # temp - for Rosh hashana 2020: add wine if total is >700
+    if this_order.total_price >= 700:
+        product_name = "יין אבשלום מתנה"
+        product_foreign_id = 12346
+        quantity = 1
+        print(product_foreign_id, product_name + ' added as a gift')
+        this_product = Products.objects.get(foreign_product_id=product_foreign_id)
         edit_inventory = False
         add_order_line_to_helper(this_order, this_product, quantity, edit_inventory)
 
@@ -244,17 +255,14 @@ def export_orders_list(path):
     date_format = xlwt.XFStyle()
     date_format.num_format_str = 'dd/mm/yyyy'
     book = xlwt.Workbook()
-    sheet_name_1 = 'פיקאפ'
-    sheet_name_2 = 'משלוחים ממודיעין'
-    sheet_name_3 = 'משלוחים לא מודיעין'
 
-    all_deliveries_methods = ["איסוף עצמי ביום חמישי 17.09.20 בשעות 16:00 - 20:00",
-                              "איסוף עצמי ביום שישי 18.09.20 בשעות 8:00 - 12:00",
-                              "משלוח ביום חמישי 17.09.20 בין השעות 16:00 - 20:00",
-                              "משלוח ביום שישי 18.09.20 בין השעות 8:00 - 12:00",
-                              "משלוח מחוץ למודיעין - יתואם טלפונית"]
+    all_deliveries_methods_full = ["איסוף עצמי בחמישי 17.9 16-20",
+                                      "איסוף עצמי בשישי 18.9 8-12",
+                                      "משלוח בחמישי 17.9 16-20",
+                                      "משלוח בשישי 18.9 8-12",
+                                      "משלוח מחוץ למודיעין"]
     for this_delivery_method in range(1, 5):
-        sh_1 = book.add_sheet(all_deliveries_methods[this_delivery_method])
+        sh_1 = book.add_sheet(all_deliveries_methods_full[this_delivery_method])
         sh_1.write(0, 0, "הזמנה מספר")
         sh_1.write(0, 1, "שם הלקוח")
         sh_1.write(0, 2, "טלפון")
